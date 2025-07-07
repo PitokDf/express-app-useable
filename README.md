@@ -30,6 +30,7 @@ Template backend siap pakai menggunakan **Express.js**, **TypeScript**, dan **Pr
 │   ├── middleware/      # Middleware (logging, rate-limit, error)
 │   ├── repositories/    # Query ke database
 │   ├── routes/          # Routing API
+│   ├── schemas/         # Validasi skema request/response (zod)
 │   ├── service/         # Bisnis logic
 │   ├── types/           # TypeScript types
 │   └── utils/           # Helper utilities
@@ -62,8 +63,8 @@ Template backend siap pakai menggunakan **Express.js**, **TypeScript**, dan **Pr
 ### 1. Clone & Install
 
 ```sh
-git clone https://github.com/PitoDf/your-repo.git
-cd server-1
+git clone https://github.com/PitoDf/express-app-useable
+cd express-app-useable # bisa ganti nama folder sesuai dengan kebutuhan
 npm install
 ```
 
@@ -93,7 +94,7 @@ npm run db:seed
 npm run dev
 ```
 
-Server berjalan di: [http://localhost:1234](http://localhost:1234)
+Server berjalan di: [http://localhost:6789](http://localhost:1234)
 
 ---
 
