@@ -68,6 +68,12 @@ cd express-app-useable # bisa ganti nama folder sesuai dengan kebutuhan
 npm install
 ```
 
+or install via npm module
+
+```sh
+npx install-express-pitok create <nama-projek>
+```
+
 ### 2. Konfigurasi Environment
 
 Salin `.env.example` ke `.env` dan sesuaikan:
