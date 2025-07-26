@@ -1,6 +1,7 @@
 import { networkInterfaces } from "node:os";
 import app from "./app";
 import { config } from "./config";
+import logger from "./utils/winston.logger";
 
 function getNetworkAdresses(): string[] {
     const nets = networkInterfaces();
@@ -18,26 +19,89 @@ function getNetworkAdresses(): string[] {
 }
 
 function startServer(port: number) {
-    const server = app.listen(port, () => {
-        console.log(`• Server running on:`);
-        console.log(`   Local:   http://localhost:${port}`);
+    // Log server startup
+    logger.serverStartup(port, config.NODE_ENV);
 
-        const addrs = getNetworkAdresses();
-        if (addrs.length) {
-            for (const addr of addrs) {
-                console.log(`   Network: http://${addr}:${port}`);
-            }
+    const server = app.listen(port, () => {
+        const networks = getNetworkAdresses();
+        const urls = [
+            `http://localhost:${port}`,
+            ...networks.map(addr => `http://${addr}:${port}`)
+        ];
+
+        // Log server ready with URLs
+        logger.serverReady(port, urls);
+
+        // Show professional startup banner in development
+        if (!config.isProduction) {
+            console.log('\n   ═══════════════════════════════════════════════════════════════');
+            console.log('   🚀 EXPRESS ADVANCED FRAMEWORK - SERVER READY');
+            console.log('   ═══════════════════════════════════════════════════════════════');
+            console.log(`   📍 Environment: ${config.NODE_ENV.toUpperCase()}`);
+            console.log(`   🌐 Service: ${config.SERVICE}`);
+            console.log(`   🔗 URLs:`);
+            urls.forEach(url => console.log(`      • ${url}`));
+            console.log('   ─────────────────────────────────────────────────────────────────');
+            console.log(`   ├─ 🏥 Health:     http://localhost:${port}/health`);
+            console.log(`   ├─ 👥 Users:      http://localhost:${port}/api/v1/users`);
+            console.log(`   └─ ⚙️  Framework: http://localhost:${port}/api/v1/framework`);
+            console.log('   ═══════════════════════════════════════════════════════════════\n');
         }
     })
 
     server.on("error", (err: NodeJS.ErrnoException) => {
         if (err.code === "EADDRINUSE") {
-            console.warn(`Port ${port} in use, trying ${port + 1}…`);
+            logger.warn(`🔄 Port ${port} in use, trying ${port + 1}...`, {
+                originalPort: port,
+                nextPort: port + 1,
+                error: err.code
+            });
             startServer(port + 1)
         } else {
-            console.error("Server error:", err);
+            logger.error("❌ Server startup failed", {
+                error: err.message,
+                code: err.code,
+                stack: err.stack
+            });
+            process.exit(1)
         }
     })
+
+    // Graceful shutdown handlers
+    process.on('SIGINT', () => {
+        logger.info('🛑 Received SIGINT, shutting down gracefully...');
+        server.close(() => {
+            logger.info('👋 Server closed. Process exiting...');
+            process.exit(0);
+        });
+    });
+
+    process.on('SIGTERM', () => {
+        logger.info('🛑 Received SIGTERM, shutting down gracefully...');
+        server.close(() => {
+            logger.info('👋 Server closed. Process exiting...');
+            process.exit(0);
+        });
+    });
 }
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logger.error('💥 Uncaught exception occurred', {
+        error: error.message,
+        stack: error.stack
+    });
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('💥 Unhandled promise rejection', {
+        reason: reason instanceof Error ? reason.message : reason,
+        stack: reason instanceof Error ? reason.stack : undefined,
+        promise
+    });
+    process.exit(1);
+});
 
 startServer(config.PORT)

@@ -95,3 +95,18 @@ export class ResponseUtil {
         });
     }
 }
+
+// Helper functions for quick responses
+export const successResponse = <T>(message: string, data?: T, extra?: Record<string, any>) => ({
+    success: true,
+    message,
+    ...(data !== undefined ? { data } : {}),
+    ...extra
+});
+
+export const errorResponse = (message: string, errors?: any[], extra?: Record<string, any>) => ({
+    success: false,
+    message,
+    ...(errors ? { errors } : {}),
+    ...extra
+});

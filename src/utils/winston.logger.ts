@@ -11,7 +11,19 @@ if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-const logFormat = winston.format.combine(
+// Custom format untuk console logging yang lebih readable
+const consoleFormat = winston.format.combine(
+    winston.format.timestamp({ format: 'HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.colorize(),
+    winston.format.printf(({ timestamp, level, message, service, ...meta }) => {
+        const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+        return `${timestamp} [${service || 'APP'}] ${level}: ${message}${metaStr}`;
+    })
+);
+
+// Format untuk file logging yang lebih structured
+const fileFormat = winston.format.combine(
     winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
@@ -20,14 +32,19 @@ const logFormat = winston.format.combine(
 
 const logger = winston.createLogger({
     level: config.isProduction ? 'info' : 'debug',
-    format: logFormat,
-    defaultMeta: { service: config.SERVICE },
+    format: fileFormat,
+    defaultMeta: {
+        service: config.SERVICE,
+        environment: config.NODE_ENV,
+        pid: process.pid
+    },
     transports: [
         new DailyRotateFile({
             filename: path.join(LOG_DIR, 'error-%DATE%.log'),
             datePattern: 'YYYY-MM-DD',
             level: "error",
             maxFiles: '14d',
+            maxSize: '10m',
             zippedArchive: true
         }),
         new DailyRotateFile({
@@ -43,12 +60,117 @@ const logger = winston.createLogger({
 if (!config.isProduction) {
     logger.add(
         new winston.transports.Console({
-            format: winston.format.combine(
-                winston.format.colorize(),
-                winston.format.simple()
-            ),
+            format: consoleFormat,
         })
     );
 }
 
-export default logger
+// Add custom logging methods untuk framework
+const frameworkLogger = {
+    // Expose all winston methods
+    info: logger.info.bind(logger),
+    error: logger.error.bind(logger),
+    warn: logger.warn.bind(logger),
+    debug: logger.debug.bind(logger),
+    verbose: logger.verbose.bind(logger),
+    silly: logger.silly.bind(logger),
+
+    // Server startup logs
+    serverStartup: (port: number, env: string) => {
+        logger.info('🚀 Server starting up', {
+            port,
+            environment: env,
+            nodeVersion: process.version,
+            timestamp: new Date().toISOString()
+        });
+    },
+
+    serverReady: (port: number, urls: string[]) => {
+        logger.info('✅ Server ready and listening', {
+            port,
+            urls,
+            timestamp: new Date().toISOString()
+        });
+    },
+
+    // Framework initialization logs
+    frameworkInit: (component: string, status: 'starting' | 'success' | 'error', details?: any) => {
+        const icon = status === 'starting' ? '⚙️' : status === 'success' ? '✅' : '❌';
+        const level = status === 'error' ? 'error' : 'info';
+
+        logger[level](`${icon} Framework ${component} ${status}`, {
+            component,
+            status,
+            ...details
+        });
+    },
+
+    // Database logs
+    database: (action: string, details?: any) => {
+        logger.info(`🗄️  Database ${action}`, {
+            action,
+            ...details
+        });
+    },
+
+    // Cache logs
+    cache: (action: string, key?: string, details?: any) => {
+        logger.debug(`💾 Cache ${action}`, {
+            action,
+            key,
+            ...details
+        });
+    },
+
+    // Email logs
+    email: (action: string, to?: string, details?: any) => {
+        logger.info(`📧 Email ${action}`, {
+            action,
+            to,
+            ...details
+        });
+    },
+
+    // Background job logs
+    job: (action: string, jobId?: string, queue?: string, details?: any) => {
+        logger.info(`⚡ Job ${action}`, {
+            action,
+            jobId,
+            queue,
+            ...details
+        });
+    },
+
+    // Request logs
+    request: (method: string, url: string, statusCode: number, duration: number, details?: any) => {
+        const level = statusCode >= 400 ? 'warn' : 'info';
+        const icon = statusCode >= 500 ? '🔴' : statusCode >= 400 ? '🟡' : '🟢';
+
+        logger[level](`${icon} ${method} ${url} ${statusCode} - ${duration}ms`, {
+            method,
+            url,
+            statusCode,
+            duration,
+            ...details
+        });
+    },
+
+    // Health check logs
+    health: (status: string, checks?: any) => {
+        const icon = status === 'healthy' ? '💚' : '💔';
+        logger.info(`${icon} Health check ${status}`, {
+            status,
+            checks
+        });
+    },
+
+    // Security logs
+    security: (event: string, details?: any) => {
+        logger.warn(`🔐 Security event: ${event}`, {
+            event,
+            ...details
+        });
+    }
+};
+
+export default frameworkLogger;
