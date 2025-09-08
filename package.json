@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/src/index.js",
   "_moduleAliases": {
-    "@": "dist/src"
+    "@": "src"
   },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only -r module-alias/register -r dotenv/config --watch .env src/index.ts",
