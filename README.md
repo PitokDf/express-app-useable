@@ -405,6 +405,97 @@ ALLOWED_ORIGINS=https://yourapp.com,https://admin.yourapp.com,https://api.yourap
 - ✅ **Legacy browser support** - Kompatibel dengan browser lama
 - ✅ **Security-first** - Tidak ada wildcard + credentials conflict
 
+## Message Codes System
+
+Framework ini mendukung **Message Codes** untuk internationalization dan konsistensi messaging. Client dapat menerjemahkan message codes sesuai bahasa yang diinginkan.
+
+### Cara Kerja:
+
+```typescript
+// Response dengan message code
+ResponseUtil.success(res, data, HttpStatus.OK, MessageCodes.SUCCESS);
+
+// Hasil response:
+{
+  "success": true,
+  "message": "Success",           // Message text (untuk backward compatibility)
+  "messageCode": "SUCCESS",       // Message code (untuk client translation)
+  "data": { ... },
+  "timestamp": "2025-09-08T...",
+  "path": "/api/users"
+}
+```
+
+### Available Message Codes:
+
+#### Success Codes:
+
+- `SUCCESS` - General success
+- `CREATED` - Resource created successfully
+- `UPDATED` - Resource updated successfully
+- `DELETED` - Resource deleted successfully
+- `ACCEPTED` - Request accepted for processing
+
+#### Error Codes:
+
+- `BAD_REQUEST` - Invalid request data
+- `UNAUTHORIZED` - Authentication required
+- `FORBIDDEN` - Access denied
+- `NOT_FOUND` - Resource not found
+- `CONFLICT` - Resource conflict
+- `VALIDATION_FAILED` - Input validation failed
+- `INVALID_CREDENTIALS` - Wrong email/password
+- `TOO_MANY_REQUESTS` - Rate limit exceeded
+- `INTERNAL_ERROR` - Server error
+- `SERVICE_UNAVAILABLE` - Service temporarily unavailable
+
+### Penggunaan:
+
+```typescript
+// 1. Success dengan message code
+ResponseUtil.success(res, userData, HttpStatus.OK, MessageCodes.SUCCESS);
+
+// 2. Created dengan message code
+ResponseUtil.created(res, newUser, MessageCodes.CREATED);
+
+// 3. Error dengan message code
+ResponseUtil.notFound(res, MessageCodes.NOT_FOUND);
+
+// 4. Custom error dengan message code
+ResponseUtil.error(res, MessageCodes.VALIDATION_FAILED, validationErrors);
+```
+
+### Keuntungan:
+
+✅ **Internationalization Ready** - Client dapat translate berdasarkan message code  
+✅ **Consistent Messaging** - Message codes terpusat dan terorganisir  
+✅ **Backward Compatible** - Tetap include message text  
+✅ **Type Safe** - TypeScript support untuk message codes  
+✅ **Client Control** - Client dapat mengontrol bahasa tampilan
+
+### Contoh Response:
+
+```json
+// Success Response
+{
+  "success": true,
+  "message": "Success",
+  "messageCode": "SUCCESS",
+  "data": { "id": 1, "name": "John" },
+  "timestamp": "2025-09-08T16:41:28.000Z",
+  "path": "/api/users"
+}
+
+// Error Response
+{
+  "success": false,
+  "message": "Not found",
+  "messageCode": "NOT_FOUND",
+  "timestamp": "2025-09-08T16:41:28.000Z",
+  "path": "/api/users/999"
+}
+```
+
 ## Testing
 
 Framework menggunakan Jest untuk testing:

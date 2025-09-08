@@ -4,11 +4,12 @@ import { createUserService, deleteUserService, getAllUserService, getUserByIdSer
 import { ResponseUtil } from "@/utils/response";
 import { asyncHandler } from "@/middleware/error.middleware";
 import { HttpStatus } from "@/constants/http-status";
+import { MessageCodes } from "@/constants/message";
 
 export const getAllUserController = asyncHandler(async (req: Request, res: Response) => {
     const users = await getAllUserService()
 
-    return ResponseUtil.success(res, users)
+    return ResponseUtil.success(res, users, HttpStatus.OK, MessageCodes.SUCCESS)
 })
 
 export const getUserByIdController = asyncHandler(async (req: Request, res: Response) => {
@@ -22,7 +23,7 @@ export const createUserController = asyncHandler(async (req: Request, res: Respo
     const payload = req.body
     const user = await createUserService(payload)
 
-    return ResponseUtil.success(res, user, HttpStatus.CREATED)
+    return ResponseUtil.success(res, user, HttpStatus.CREATED, MessageCodes.CREATED)
 })
 
 export const updateUserController = asyncHandler(async (req: Request, res: Response) => {
@@ -30,12 +31,12 @@ export const updateUserController = asyncHandler(async (req: Request, res: Respo
     const userId = req.params.userId
     const user = await updateUserService(userId, payload)
 
-    return ResponseUtil.success(res, user)
+    return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.UPDATED)
 })
 
 export const deleteUserController = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.params.userId
     const user = await deleteUserService(userId)
 
-    return ResponseUtil.success(res, user)
+    return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.DELETED)
 })
