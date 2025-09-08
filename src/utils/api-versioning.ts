@@ -161,7 +161,8 @@ class ApiVersioningService {
             }
 
             versionRouters.set(version, handler);
-            logger.info(`Version ${version} router registered for pattern ${pattern}`);
+            // Reduced logging verbosity - version router registration is now silent
+            // logger.info(`Version ${version} router registered for pattern ${pattern}`);
         };
 
         // Main router that delegates to version-specific routers

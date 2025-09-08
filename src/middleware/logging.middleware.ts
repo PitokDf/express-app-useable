@@ -1,20 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import logger from "../utils/winston.logger";
+import logger from "@/utils/winston.logger";
 
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
     const start = process.hrtime();
     const startTime = new Date();
-
-    // Log request start
-    logger.debug(`📥 ${req.method} ${req.originalUrl} - Request started`, {
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip || req.connection.remoteAddress,
-        userAgent: req.get("User-Agent"),
-        contentType: req.get("Content-Type"),
-        contentLength: req.get("Content-Length"),
-        timestamp: startTime.toISOString()
-    });
 
     res.on("finish", () => {
         const [seconds, nanoseconds] = process.hrtime(start);

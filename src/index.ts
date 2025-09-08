@@ -3,6 +3,10 @@ import app from "./app";
 import { config } from "./config";
 import logger from "./utils/winston.logger";
 
+let activeServer: any = null;
+let serverStarted = false;
+let startupTimeout: NodeJS.Timeout | null = null;
+
 function getNetworkAdresses(): string[] {
     const nets = networkInterfaces();
     const results: string[] = []
@@ -19,70 +23,64 @@ function getNetworkAdresses(): string[] {
 }
 
 function startServer(port: number) {
-    // Log server startup
-    logger.serverStartup(port, config.NODE_ENV);
+    if (serverStarted) {
+        return;
+    }
 
     const server = app.listen(port, () => {
-        const networks = getNetworkAdresses();
-        const urls = [
-            `http://localhost:${port}`,
-            ...networks.map(addr => `http://${addr}:${port}`)
-        ];
+        // Set timeout to wait for potential errors
+        startupTimeout = setTimeout(() => {
+            serverStarted = true;
 
-        // Log server ready with URLs
-        logger.serverReady(port, urls);
+            const networks = getNetworkAdresses();
+            const urls = [
+                `http://localhost:${port}`,
+                ...networks.map(addr => `http://${addr}:${port}`)
+            ];
 
-        // Show professional startup banner in development
-        if (!config.isProduction) {
-            console.log('\n   ═══════════════════════════════════════════════════════════════');
-            console.log('   🚀 EXPRESS ADVANCED FRAMEWORK - SERVER READY');
-            console.log('   ═══════════════════════════════════════════════════════════════');
-            console.log(`   📍 Environment: ${config.NODE_ENV.toUpperCase()}`);
-            console.log(`   🌐 Service: ${config.SERVICE}`);
-            console.log(`   🔗 URLs:`);
-            urls.forEach(url => console.log(`      • ${url}`));
-            console.log('   ─────────────────────────────────────────────────────────────────');
-            console.log(`   ├─ 🏥 Health:     http://localhost:${port}/health`);
-            console.log(`   ├─ 👥 Users:      http://localhost:${port}/api/v1/users`);
-            console.log(`   └─ ⚙️  Framework: http://localhost:${port}/api/v1/framework`);
-            console.log('   ═══════════════════════════════════════════════════════════════\n');
-        }
-    })
+            activeServer = server;
+
+            logger.serverStartup(port, config.NODE_ENV);
+            logger.serverReady(port, urls);
+
+            // Show professional startup banner in development
+            if (!config.isProduction) {
+                console.log('\n   ═══════════════════════════════════════════════════════════════');
+                console.log('   🚀 EXPRESS SERVER READY');
+                console.log('   ═══════════════════════════════════════════════════════════════');
+                console.log(`   📍 Environment: ${config.NODE_ENV.toUpperCase()}`);
+                console.log(`   🌐 Service: ${config.SERVICE}`);
+                console.log(`   🔗 URLs:`);
+                urls.forEach(url => console.log(`      • ${url}`));
+                console.log('   ═══════════════════════════════════════════════════════════════\n');
+            }
+        }, 100); // Wait 100ms for potential errors
+    });
 
     server.on("error", (err: NodeJS.ErrnoException) => {
+        // Clear the startup timeout since we got an error
+        if (startupTimeout) {
+            clearTimeout(startupTimeout);
+            startupTimeout = null;
+        }
+
         if (err.code === "EADDRINUSE") {
-            logger.warn(`🔄 Port ${port} in use, trying ${port + 1}...`, {
-                originalPort: port,
-                nextPort: port + 1,
-                error: err.code
+            logger.warn(`🔄 Port ${port} is busy, trying port ${port + 1}...`);
+            // Close the failed server before trying the next port
+            server.close(() => {
+                startServer(port + 1);
             });
-            startServer(port + 1)
         } else {
             logger.error("❌ Server startup failed", {
                 error: err.message,
                 code: err.code,
                 stack: err.stack
             });
-            process.exit(1)
+            process.exit(1);
         }
-    })
-
-    // Graceful shutdown handlers
-    process.on('SIGINT', () => {
-        logger.info('🛑 Received SIGINT, shutting down gracefully...');
-        server.close(() => {
-            logger.info('👋 Server closed. Process exiting...');
-            process.exit(0);
-        });
     });
 
-    process.on('SIGTERM', () => {
-        logger.info('🛑 Received SIGTERM, shutting down gracefully...');
-        server.close(() => {
-            logger.info('👋 Server closed. Process exiting...');
-            process.exit(0);
-        });
-    });
+    return server;
 }
 
 // Handle uncaught exceptions
@@ -104,4 +102,39 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
-startServer(config.PORT)
+// Graceful shutdown handlers
+process.on('SIGINT', () => {
+    logger.info('🛑 Received SIGINT, shutting down gracefully...');
+    // Clear any pending startup timeout
+    if (startupTimeout) {
+        clearTimeout(startupTimeout);
+        startupTimeout = null;
+    }
+    if (activeServer) {
+        activeServer.close(() => {
+            logger.info('👋 Server closed. Process exiting...');
+            process.exit(0);
+        });
+    } else {
+        process.exit(0);
+    }
+});
+
+process.on('SIGTERM', () => {
+    logger.info('🛑 Received SIGTERM, shutting down gracefully...');
+    // Clear any pending startup timeout
+    if (startupTimeout) {
+        clearTimeout(startupTimeout);
+        startupTimeout = null;
+    }
+    if (activeServer) {
+        activeServer.close(() => {
+            logger.info('👋 Server closed. Process exiting...');
+            process.exit(0);
+        });
+    } else {
+        process.exit(0);
+    }
+});
+
+startServer(config.PORT);

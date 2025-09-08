@@ -1,9 +1,9 @@
 
 import { NextFunction, Request, Response } from "express";
-import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService } from "../service/user.service";
-import { ResponseUtil } from "../utils/response";
-import { asyncHandler } from "../middleware/error.middleware";
-import { HttpStatus } from "../constants/http-status";
+import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService } from "@/service/user.service";
+import { ResponseUtil } from "@/utils/response";
+import { asyncHandler } from "@/middleware/error.middleware";
+import { HttpStatus } from "@/constants/http-status";
 
 export const getAllUserController = asyncHandler(async (req: Request, res: Response) => {
     const users = await getAllUserService()

@@ -7,7 +7,7 @@ import {
     backgroundJobsTestController,
     transactionTestController,
     frameworkStatusController
-} from "../controller/framework.controller";
+} from "@/controller/framework.controller";
 
 const frameworkRouter = Router();
 

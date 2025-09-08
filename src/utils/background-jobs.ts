@@ -1,6 +1,6 @@
 import Bull, { Queue, Job, JobOptions } from 'bull';
 import logger from './winston.logger';
-import { config } from '../config';
+import { config } from '@/config';
 
 export interface JobData {
     [key: string]: any;
@@ -77,7 +77,8 @@ class BackgroundJobService {
         this.setupEventListeners(queue, config.name);
 
         this.queues.set(config.name, queue);
-        logger.info(`Queue "${config.name}" created`);
+        // Reduced logging verbosity - queue creation is now silent
+        // logger.info(`Queue "${config.name}" created`);
 
         return queue;
     }
@@ -97,7 +98,8 @@ class BackgroundJobService {
         }
 
         queue.process(jobType, concurrency || 1, async (job: Job<T>) => {
-            logger.info(`Processing job ${job.id} of type ${jobType} in queue ${queueName}`);
+            // Reduced logging verbosity - processor registration is now silent
+            // logger.info(`Processing job ${job.id} of type ${jobType} in queue ${queueName}`);
 
             try {
                 const result = await handler(job);
@@ -109,7 +111,8 @@ class BackgroundJobService {
             }
         });
 
-        logger.info(`Processor registered for job type "${jobType}" in queue "${queueName}"`);
+        // Reduced logging verbosity - processor registration is now silent
+        // logger.info(`Processor registered for job type "${jobType}" in queue "${queueName}"`);
     }
 
     /**

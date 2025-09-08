@@ -1,5 +1,5 @@
 import { User } from "@prisma/client";
-import { db } from "../config/prisma";
+import { db } from "@/config/prisma";
 
 export class UserRepository {
     static async findById(id: string): Promise<User | null> {
@@ -40,5 +40,17 @@ export class UserRepository {
 
     static async findAll(): Promise<User[]> {
         return db.user.findMany();
+    }
+
+    // Optimized version - select only needed fields
+    static async findAllOptimized(): Promise<Pick<User, 'id' | 'name' | 'email'>[]> {
+        return db.user.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                // Exclude password field for better performance
+            }
+        });
     }
 }

@@ -7,24 +7,53 @@ import { emailService } from './email';
 import { cacheManager } from './cache';
 import { fileUploadService } from './file-upload';
 import logger from './winston.logger';
-import { config } from '../config';
+import { config } from '@/config';
+
+/**
+ * Framework Services with Lazy Loading
+ *
+ * Core Services (always initialized):
+ * - database: DatabaseTransactionService
+ * - health: HealthCheckService
+ * - versioning: ApiVersioningService
+ *
+ * Optional Services (lazy loaded on first use):
+ * - backgroundJobs: BackgroundJobService
+ * - email: EmailService
+ * - cache: CacheManager
+ * - fileUpload: FileUploadService
+ *
+ * Usage:
+ * ```typescript
+ * import { frameworkInitializer } from '@/app';
+ *
+ * // Get email service (will initialize if not already loaded)
+ * const emailSvc = await frameworkInitializer.getEmailService();
+ * await emailSvc.sendEmail({ to: 'user@example.com', subject: 'Test' });
+ *
+ * // Get background job service
+ * const bgJobSvc = await frameworkInitializer.getBackgroundJobService();
+ * await bgJobSvc.addJob('email', 'send', { to: 'user@example.com' });
+ * ```
+ */
 
 export interface FrameworkServices {
-    database: DatabaseTransactionService;
-    health: HealthCheckService;
-    versioning: ApiVersioningService;
-    backgroundJobs: typeof backgroundJobService;
-    email: typeof emailService;
-    cache: typeof cacheManager;
-    fileUpload: typeof fileUploadService;
+    database?: DatabaseTransactionService;
+    health?: HealthCheckService;
+    versioning?: ApiVersioningService;
+    backgroundJobs?: typeof backgroundJobService;
+    email?: typeof emailService;
+    cache?: typeof cacheManager;
+    fileUpload?: typeof fileUploadService;
 }
 
 class FrameworkInitializer {
     private services: Partial<FrameworkServices> = {};
     private initialized = false;
+    private lazyServicesInitialized = new Set<string>();
 
     /**
-     * Initialize all framework services
+     * Initialize core framework services only
      */
     async initialize(prismaClient: PrismaClient): Promise<FrameworkServices> {
         if (this.initialized) {
@@ -32,36 +61,44 @@ class FrameworkInitializer {
             return this.services as FrameworkServices;
         }
 
-        logger.info('Initializing Express Framework Services...');
+        logger.info('🚀 Initializing Express Framework Core Services...');
 
         try {
-            // Initialize Database Transaction Service
+            // Initialize only core services
             this.services.database = new DatabaseTransactionService(prismaClient);
-            logger.info('✓ Database Transaction Service initialized');
-
-            // Initialize Health Check Service
             this.services.health = new HealthCheckService(prismaClient);
-            logger.info('✓ Health Check Service initialized');
-
-            // Initialize API Versioning Service
-            const versionConfigs: VersionConfig[] = [
-                { version: '1.0' },
-                { version: '1.1' },
-                {
-                    version: '2.0',
-                    deprecated: false
-                }
-            ];
-
             this.services.versioning = new ApiVersioningService({
                 defaultVersion: config.API_DEFAULT_VERSION,
-                supportedVersions: versionConfigs,
+                supportedVersions: [
+                    { version: '1.0' },
+                    { version: '1.1' },
+                    { version: '2.0', deprecated: false }
+                ],
                 versionHeader: config.API_VERSION_HEADER,
                 deprecationWarnings: true
             });
-            logger.info('✓ API Versioning Service initialized');
 
-            // Initialize Background Job Service
+            logger.info('✅ Core services initialized');
+            this.initialized = true;
+
+            // Cache warming for frequently accessed data
+            await this.warmUpCache(prismaClient);
+
+            return this.services as FrameworkServices;
+
+        } catch (error) {
+            logger.error('❌ Failed to initialize core framework services:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get background job service (lazy loaded)
+     */
+    async getBackgroundJobService(): Promise<typeof backgroundJobService> {
+        if (!this.services.backgroundJobs) {
+            logger.info('🔄 Initializing Background Job Service...');
+
             this.services.backgroundJobs = backgroundJobService;
 
             // Create default queues
@@ -69,40 +106,66 @@ class FrameworkInitializer {
             backgroundJobService.createQueue(QueueConfigs.EMAIL);
             backgroundJobService.createQueue(QueueConfigs.HIGH_PRIORITY);
             backgroundJobService.createQueue(QueueConfigs.LOW_PRIORITY);
-            logger.info('✓ Background Job Service initialized with default queues');
 
-            // Initialize Email Service
+            // Setup job processors
+            this.setupJobProcessors();
+
+            this.lazyServicesInitialized.add('backgroundJobs');
+            logger.info('✅ Background Job Service initialized');
+        }
+        return this.services.backgroundJobs!;
+    }
+
+    /**
+     * Get email service (lazy loaded)
+     */
+    async getEmailService(): Promise<typeof emailService> {
+        if (!this.services.email) {
+            logger.info('🔄 Initializing Email Service...');
+
             this.services.email = emailService;
 
             // Verify email connection in development
             if (config.NODE_ENV === 'development' && config.EMAIL_USER) {
                 try {
                     await emailService.verifyConnection();
-                    logger.info('✓ Email Service initialized and verified');
+                    logger.info('✅ Email Service initialized and verified');
                 } catch (error) {
-                    logger.warn('⚠ Email Service initialized but connection failed:', error);
+                    logger.warn('⚠️ Email Service initialized but connection failed - check credentials');
                 }
             } else {
-                logger.info('✓ Email Service initialized (connection not verified)');
+                logger.info('✅ Email Service initialized');
             }
 
-            // Initialize Cache Manager
-            this.services.cache = cacheManager;
-            logger.info('✓ Cache Manager initialized');
-
-            // Initialize File Upload Service
-            this.services.fileUpload = fileUploadService;
-            logger.info('✓ File Upload Service initialized');
-
-            this.initialized = true;
-            logger.info('🚀 All Framework Services initialized successfully!');
-
-            return this.services as FrameworkServices;
-
-        } catch (error) {
-            logger.error('Failed to initialize framework services:', error);
-            throw error;
+            this.lazyServicesInitialized.add('email');
         }
+        return this.services.email!;
+    }
+
+    /**
+     * Get cache service (lazy loaded)
+     */
+    async getCacheService(): Promise<typeof cacheManager> {
+        if (!this.services.cache) {
+            logger.info('🔄 Initializing Cache Service...');
+            this.services.cache = cacheManager;
+            this.lazyServicesInitialized.add('cache');
+            logger.info('✅ Cache Service initialized');
+        }
+        return this.services.cache!;
+    }
+
+    /**
+     * Get file upload service (lazy loaded)
+     */
+    async getFileUploadService(): Promise<typeof fileUploadService> {
+        if (!this.services.fileUpload) {
+            logger.info('🔄 Initializing File Upload Service...');
+            this.services.fileUpload = fileUploadService;
+            this.lazyServicesInitialized.add('fileUpload');
+            logger.info('✅ File Upload Service initialized');
+        }
+        return this.services.fileUpload!;
     }
 
     /**
@@ -175,7 +238,8 @@ class FrameworkInitializer {
             };
         });
 
-        logger.info('✓ Default job processors registered');
+        // Reduced logging verbosity - job processors registration is now silent
+        // logger.info('✓ Default job processors registered');
     }
 
     /**
@@ -251,7 +315,8 @@ class FrameworkInitializer {
             });
         }
 
-        logger.info('✓ Custom health checks registered');
+        // Reduced logging verbosity - custom health checks registration is now silent
+        // logger.info('✓ Custom health checks registered');
     }
 
     /**
@@ -292,6 +357,38 @@ class FrameworkInitializer {
             services: Object.keys(this.services),
             timestamp: new Date().toISOString()
         };
+    }
+
+    /**
+     * Warm up cache for frequently accessed data
+     */
+    private async warmUpCache(prismaClient: PrismaClient): Promise<void> {
+        try {
+            logger.info('🔥 Warming up cache for frequently accessed data...');
+
+            // Warm up users cache
+            const users = await prismaClient.user.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                }
+            });
+
+            const processedUsers = users.map((user: any) => ({
+                ...user,
+                password: '[REDACTED]'
+            }));
+
+            // Cache the users data
+            cacheManager.set('users:all', processedUsers, 300); // 5 minutes TTL
+
+            logger.info(`✅ Cache warmed up with ${users.length} users`);
+
+        } catch (error) {
+            logger.warn('⚠️  Cache warming failed, continuing without cache:', error);
+            // Don't throw error, just log it - cache warming is not critical
+        }
     }
 }
 

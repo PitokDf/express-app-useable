@@ -1,6 +1,6 @@
 import { Response, Request } from "express"
-import { ApiResponse, PaginatedResponse } from "../types/response";
-import { HttpStatus } from "../constants/http-status";
+import { ApiResponse, PaginatedResponse } from "@/types/response";
+import { HttpStatus } from "@/constants/http-status";
 
 export class ResponseUtil {
     private static base<T>(

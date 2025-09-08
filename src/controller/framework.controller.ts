@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { ResponseUtil } from "../utils/response";
-import { asyncHandler } from "../middleware/error.middleware";
-import { HttpStatus } from "../constants/http-status";
+import { ResponseUtil } from "@/utils/response";
+import { asyncHandler } from "@/middleware/error.middleware";
+import { HttpStatus } from "@/constants/http-status";
 import {
     cacheTestService,
     emailTestService,
@@ -9,7 +9,7 @@ import {
     backgroundJobsTestService,
     transactionTestService,
     frameworkStatusService
-} from "../service/framework.service";
+} from "@/service/framework.service";
 
 export const cacheTestController = asyncHandler(async (req: Request, res: Response) => {
     const result = await cacheTestService();

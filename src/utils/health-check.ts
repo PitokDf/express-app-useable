@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import logger from './winston.logger';
-import { config } from '../config';
+import { config } from '@/config';
 import { cacheManager } from './cache';
 
 export interface HealthCheckResult {
@@ -44,7 +44,8 @@ class HealthCheckService {
      */
     registerChecker(name: string, checker: HealthChecker): void {
         this.checkers.set(name, checker);
-        logger.info(`Health checker "${name}" registered`);
+        // Reduced logging verbosity - health checker registration is now silent
+        // logger.info(`Health checker "${name}" registered`);
     }
 
     /**
@@ -366,7 +367,8 @@ class HealthCheckService {
             }
         });
 
-        logger.info('Default health checkers registered');
+        // Reduced logging verbosity - default health checkers registration is now silent
+        // logger.info('Default health checkers registered');
     }
 }
 

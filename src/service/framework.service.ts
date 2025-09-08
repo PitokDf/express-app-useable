@@ -1,12 +1,11 @@
-import { cacheManager } from "../utils/cache";
-import { emailService } from "../utils/email";
-import { backgroundJobService, JobTypes } from "../utils/background-jobs";
-import { DatabaseTransactionService } from "../utils/database-transaction";
-import { prisma } from "../config/prisma";
-import logger from "../utils/winston.logger";
-import { AppError } from "../errors/app-error";
-import { HttpStatus } from "../constants/http-status";
-import { Messages } from "../constants/message";
+import { cacheManager } from "@/utils/cache";
+import { JobTypes } from "@/utils/background-jobs";
+import { DatabaseTransactionService } from "@/utils/database-transaction";
+import { prisma } from "@/config/prisma";
+import logger from "@/utils/winston.logger";
+import { AppError } from "@/errors/app-error";
+import { HttpStatus } from "@/constants/http-status";
+import { frameworkInitializer } from "@/app";
 
 const transactionService = new DatabaseTransactionService(prisma);
 
@@ -65,26 +64,29 @@ export async function emailTestService(payload: EmailTestPayload) {
 
     logger.email('sending test email', to, { type, subject });
 
+    // Get email service lazily
+    const emailSvc = await frameworkInitializer.getEmailService();
+
     let result;
     switch (type) {
         case 'welcome':
-            result = await emailService.sendWelcomeEmail(to, 'Test User');
+            result = await emailSvc.sendWelcomeEmail(to, 'Test User');
             break;
         case 'reset':
-            result = await emailService.sendPasswordResetEmail(to, 'Test User', 'https://example.com/reset?token=test');
+            result = await emailSvc.sendPasswordResetEmail(to, 'Test User', 'https://example.com/reset?token=test');
             break;
         case 'verification':
-            result = await emailService.sendVerificationEmail(to, 'Test User', 'https://example.com/verify?token=test');
+            result = await emailSvc.sendVerificationEmail(to, 'Test User', 'https://example.com/verify?token=test');
             break;
         case 'custom':
-            result = await emailService.sendEmail({
+            result = await emailSvc.sendEmail({
                 to,
                 subject,
                 text: body || 'This is a test email'
             });
             break;
         default:
-            result = await emailService.sendEmail({
+            result = await emailSvc.sendEmail({
                 to,
                 subject,
                 text: 'This is a test email'
@@ -140,6 +142,9 @@ export async function paginationTestService(query: any) {
 export async function backgroundJobsTestService(payload: BackgroundJobPayload) {
     const { to, subject, body, message, delay = 0 } = payload;
 
+    // Get background job service lazily
+    const bgJobSvc = await frameworkInitializer.getBackgroundJobService();
+
     // Determine job type and data based on payload
     let queueName: string;
     let jobType: string;
@@ -152,7 +157,7 @@ export async function backgroundJobsTestService(payload: BackgroundJobPayload) {
         jobData = { to, subject, body };
         logger.job('creating email job', undefined, queueName, { to, subject });
     } else if (message) {
-        // Notification job  
+        // Notification job
         queueName = JobTypes.NOTIFICATION;
         jobType = 'send-notification';
         jobData = {
@@ -168,12 +173,12 @@ export async function backgroundJobsTestService(payload: BackgroundJobPayload) {
     let job;
     if (delay > 0) {
         logger.job('scheduling delayed job', undefined, queueName, { delay });
-        job = await backgroundJobService.addJob(queueName, jobType, jobData, {
+        job = await bgJobSvc.addJob(queueName, jobType, jobData, {
             delay: delay * 1000 // Convert to milliseconds
         });
     } else {
         logger.job('queuing immediate job', undefined, queueName);
-        job = await backgroundJobService.addJob(queueName, jobType, jobData);
+        job = await bgJobSvc.addJob(queueName, jobType, jobData);
     }
 
     logger.job('job created successfully', job.id?.toString(), queueName, { type: jobType });

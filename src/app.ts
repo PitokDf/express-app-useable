@@ -5,14 +5,13 @@ import cookieParser from "cookie-parser"
 import { config } from "./config"
 import { generalLimiter } from "./middleware/rate-limit.middleware"
 import compression from "compression"
-import { requestLogger } from "./middleware/logging.middleware"
 import { errorHandler, notFound } from "./middleware/error.middleware"
 import { App } from "./constants/app"
 import apiRouter from "./routes/index.routes"
-import morgan from "morgan"
 import { frameworkInitializer } from "./utils/framework-initializer"
 import { prisma } from "./config/prisma"
 import logger from "./utils/winston.logger"
+import { requestLogger } from "./middleware/logging.middleware"
 
 const app = express()
 
@@ -21,31 +20,24 @@ let frameworkServices: any = null;
 
 const initializeFramework = async () => {
     try {
-        logger.frameworkInit('services', 'starting', {
-            components: ['database', 'cache', 'email', 'jobs', 'health']
-        });
+        logger.info('🚀 Initializing Express Advanced Framework...');
 
         frameworkServices = await frameworkInitializer.initialize(prisma);
-        logger.frameworkInit('services', 'success');
 
-        // Setup job processors
-        logger.frameworkInit('job-processors', 'starting');
-        frameworkInitializer.setupJobProcessors();
-        logger.frameworkInit('job-processors', 'success');
-
-        // Register custom health checks
-        logger.frameworkInit('health-checks', 'starting');
+        // Only register custom health checks for core services
         frameworkInitializer.registerCustomHealthChecks();
-        logger.frameworkInit('health-checks', 'success');
 
-        logger.info('🚀 All framework services initialized successfully');
+        logger.info('✅ Framework initialization completed successfully');
     } catch (error) {
-        logger.frameworkInit('initialization', 'error', {
+        logger.error('❌ Framework initialization failed:', {
             error: error instanceof Error ? error.message : error
         });
         // Don't crash the app, just log the error
     }
 };
+
+// Export framework initializer for lazy loading services
+export { frameworkInitializer };
 
 // Initialize framework asynchronously
 initializeFramework();
@@ -65,12 +57,32 @@ app.use(helmet({
 
 // Konfigurasi CORS - Menangani Berbagi Sumber Daya Lintas-Origin
 app.use(cors({
-    origin: config.NODE_ENV === "production" ? config.CLIENT_URL : "*",
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        if (config.NODE_ENV === "production") {
+            // In production, only allow specific origins from environment
+            if (config.ALLOWED_ORIGINS.includes(origin)) {
+                return callback(null, true);
+            } else {
+                return callback(new Error('Not allowed by CORS'));
+            }
+        } else {
+            // In development, allow all origins but log them
+            logger.debug(`CORS request from origin: ${origin}`);
+            return callback(null, true);
+        }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Metode HTTP yang diizinkan
-    allowedHeaders: config.NODE_ENV === "production"
-        ? ['Content-Type', 'Authorization', 'X-Requested-With']
-        : ['Content-Type', 'Authorization', 'X-Requested-With', 'ngrok-skip-browser-warning'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        ...(config.NODE_ENV !== "production" ? ['ngrok-skip-browser-warning'] : [])
+    ],
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+    maxAge: 86400 // Cache preflight for 24 hours
 }))
 
 //Rate limiting untuk melindungi dari serangan brute-force dan penyalahgunaan
@@ -86,11 +98,6 @@ app.use(cookieParser())
 // Middleware kompresi - Mengompres body respons untuk pemuatan yang lebih cepat
 app.use(compression());
 app.use(requestLogger)
-
-// Middleware logging permintaan (Morgan)
-if (config.NODE_ENV === "development") {
-    app.use(morgan('dev')); // Output ringkas dengan warna berdasarkan status respons untuk development
-}
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
@@ -132,28 +139,6 @@ app.get('/health/live', (req, res) => {
     res.json(liveData);
 });
 
-app.get("/", (req, res) => {
-    res.status(200).json({
-        message: "Express Framework with Advanced Features",
-        version: "2.0.0",
-        features: [
-            "Cache Management",
-            "Email Service",
-            "File Upload",
-            "Pagination",
-            "Database Transactions",
-            "Background Jobs",
-            "Health Checks",
-            "API Versioning"
-        ],
-        endpoints: {
-            health: "/health",
-            framework: "/api/framework",
-            users: "/api/users"
-        }
-    })
-})
-
 app.use(App.API_PREFIX, apiRouter)
 
 app.use(notFound)
@@ -161,36 +146,20 @@ app.use(errorHandler)
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    logger.info('🛑 Received SIGINT, shutting down gracefully...');
-
     if (frameworkServices) {
-        logger.info('🔄 Shutting down framework services...');
         await frameworkInitializer.shutdown();
-        logger.info('✅ Framework services shut down complete');
     }
 
-    logger.database('disconnecting');
     await prisma.$disconnect();
-    logger.database('disconnected');
-
-    logger.info('👋 Application shutdown complete');
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-    logger.info('🛑 Received SIGTERM, shutting down gracefully...');
-
     if (frameworkServices) {
-        logger.info('🔄 Shutting down framework services...');
         await frameworkInitializer.shutdown();
-        logger.info('✅ Framework services shut down complete');
     }
 
-    logger.database('disconnecting');
     await prisma.$disconnect();
-    logger.database('disconnected');
-
-    logger.info('👋 Application shutdown complete');
     process.exit(0);
 });
 

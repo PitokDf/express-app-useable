@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { getUserByEmailService } from "../service/user.service";
-import { AppError } from "../errors/app-error";
-import { HttpStatus } from "../constants/http-status";
+import { getUserByEmailService } from "@/service/user.service";
+import { AppError } from "@/errors/app-error";
+import { HttpStatus } from "@/constants/http-status";
 
 export const checkEmailExists = async (
     req: Request,

@@ -1,10 +1,11 @@
 import winston from "winston"
-import { config } from "../config"
+import { config } from "@/config"
 import path from "path"
 import fs from "fs"
 import DailyRotateFile from "winston-daily-rotate-file"
 
-const LOG_DIR = path.join(__dirname, '../../logs')
+// Path yang lebih robust - selalu mengarah ke root project
+const LOG_DIR = path.resolve(process.cwd(), 'logs')
 
 // Buat folder logs jika belum ada
 if (!fs.existsSync(LOG_DIR)) {
@@ -13,12 +14,11 @@ if (!fs.existsSync(LOG_DIR)) {
 
 // Custom format untuk console logging yang lebih readable
 const consoleFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'HH:mm:ss' }),
     winston.format.errors({ stack: true }),
     winston.format.colorize(),
-    winston.format.printf(({ timestamp, level, message, service, ...meta }) => {
-        const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-        return `${timestamp} [${service || 'APP'}] ${level}: ${message}${metaStr}`;
+    winston.format.printf(({ level, message, service }) => {
+        const serviceName = service === 'express-framework' ? 'FRAMEWORK' : ((service as string).toUpperCase().replace("-", "_") || 'APP');
+        return `[${level}][${serviceName}] ${message}`;
     })
 );
 
@@ -77,7 +77,7 @@ const frameworkLogger = {
 
     // Server startup logs
     serverStartup: (port: number, env: string) => {
-        logger.info('🚀 Server starting up', {
+        logger.info(`🚀 Server successfully started on port ${port}`, {
             port,
             environment: env,
             nodeVersion: process.version,
@@ -86,7 +86,7 @@ const frameworkLogger = {
     },
 
     serverReady: (port: number, urls: string[]) => {
-        logger.info('✅ Server ready and listening', {
+        logger.info(`🌐 Server accessible at ${urls.length} endpoint(s)`, {
             port,
             urls,
             timestamp: new Date().toISOString()
@@ -144,9 +144,8 @@ const frameworkLogger = {
     // Request logs
     request: (method: string, url: string, statusCode: number, duration: number, details?: any) => {
         const level = statusCode >= 400 ? 'warn' : 'info';
-        const icon = statusCode >= 500 ? '🔴' : statusCode >= 400 ? '🟡' : '🟢';
 
-        logger[level](`${icon} ${method} ${url} ${statusCode} - ${duration}ms`, {
+        logger[level](`${method} ${url} ${statusCode} - ${duration}ms`, {
             method,
             url,
             statusCode,
@@ -157,8 +156,7 @@ const frameworkLogger = {
 
     // Health check logs
     health: (status: string, checks?: any) => {
-        const icon = status === 'healthy' ? '💚' : '💔';
-        logger.info(`${icon} Health check ${status}`, {
+        logger.info(` Health check ${status}`, {
             status,
             checks
         });

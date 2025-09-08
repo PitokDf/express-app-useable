@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { ResponseUtil } from "../utils/response";
-import logger from "../utils/winston.logger";
-import { AppError } from "../errors/app-error";
-// import { HttpStatus } from "../constants/http-status";
-import { Messages } from "../constants/message";
+import { ResponseUtil } from "@/utils/response";
+import logger from "@/utils/winston.logger";
+import { AppError } from "@/errors/app-error";
+import { Messages } from "@/constants/message";
 import { ZodError } from "zod";
 import { MulterError } from "multer";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { HttpStatus } from "../constants/http-status";
+import { HttpStatus } from "@/constants/http-status";
 
 export const notFound = (req: Request, res: Response): void => {
     ResponseUtil.notFound(res, `Route ${req.originalUrl} not found`);
@@ -23,7 +22,6 @@ export const errorHandler = (
     let message: string = Messages.INTERNAL_ERROR;
     let errors: any[] | undefined;
 
-    // ─── Handle Zod Validation Error ─────────────────────────────────
     if (err instanceof ZodError) {
         statusCode = HttpStatus.BAD_REQUEST;
         message = "Invalid input data.";
@@ -33,7 +31,6 @@ export const errorHandler = (
         }));
     }
 
-    // ─── JWT Errors ─────────────────────────────────────────────────
     else if (err.name === 'JsonWebTokenError') {
         statusCode = HttpStatus.UNAUTHORIZED;
         message = "Invalid token";
@@ -42,13 +39,12 @@ export const errorHandler = (
         message = "Token expired";
     }
 
-    // ─── Multer Error (File Upload) ─────────────────────────────────
     else if (err instanceof MulterError) {
         statusCode = HttpStatus.BAD_REQUEST;
-        message = err.message || "File upload failed";
+        message = "File upload failed";
     } else if (err.message?.startsWith("File type")) {
         statusCode = HttpStatus.BAD_REQUEST;
-        message = err.message;
+        message = "Invalid file type";
     }
 
     else if (err instanceof PrismaClientKnownRequestError) {
@@ -62,24 +58,21 @@ export const errorHandler = (
                 message = 'Record not found';
                 break;
             default:
-                message = `Database error: ${err.message}`;
+                message = 'A database error occurred';
         }
     }
 
-    // ─── AppError (Custom Error) ────────────────────────────────────
     else if (err instanceof AppError) {
         statusCode = err.statusCode ?? HttpStatus.INTERNAL_SERVER_ERROR;
         message = err.message;
         errors = err.errors;
     }
 
-    // ─── Body Parser JSON Syntax Error ──────────────────────────────
     else if (err instanceof SyntaxError && 'body' in err) {
         statusCode = HttpStatus.BAD_REQUEST;
         message = 'Invalid JSON in request body';
     }
 
-    // ─── Log Error ──────────────────────────────────────────────────
     logger.error('Unhandled Error', {
         message: err.message,
         stack: err.stack,
@@ -90,7 +83,6 @@ export const errorHandler = (
         statusCode,
     });
 
-    // ─── Send Error Response ────────────────────────────────────────
     ResponseUtil.error(res, message, errors, statusCode);
 };
 

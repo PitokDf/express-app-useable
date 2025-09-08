@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
+import { config } from '@/config';
 
 export const JwtUtil = {
     generate(payload: any, expiresIn: any = '1D'): string {

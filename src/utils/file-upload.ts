@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
 import logger from './winston.logger';
-import { config } from '../config';
+import { config } from '@/config';
 
 export interface FileUploadOptions {
     destination?: string;
