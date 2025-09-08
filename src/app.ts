@@ -32,12 +32,8 @@ const initializeFramework = async () => {
         logger.error('❌ Framework initialization failed:', {
             error: error instanceof Error ? error.message : error
         });
-        // Don't crash the app, just log the error
     }
 };
-
-// Export framework initializer for lazy loading services
-export { frameworkInitializer };
 
 // Initialize framework asynchronously
 initializeFramework();
