@@ -16,7 +16,7 @@ module.exports = {
     roots: ["<rootDir>/src", "<rootDir>/tests"],
     extensionsToTreatAsEsm: ['.ts'],
     moduleNameMapper: {
-        '^@src/(.*)$': '<rootDir>/src/$1',
+        '^@/(.*)$': '<rootDir>/src/$1',
     },
     coveragePathIgnorePatterns: [
         "/node_modules/",

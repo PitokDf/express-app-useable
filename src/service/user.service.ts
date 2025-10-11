@@ -3,7 +3,7 @@ import { Messages } from "@/constants/message";
 import { AppError } from "@/errors/app-error";
 import { UserRepository } from "@/repositories/user.repository";
 import { CreateUserInput, UpdateUserInput } from "@/schemas/user.schema";
-import { BcryptUtil } from "@/utils";
+import { BcryptUtil, JwtUtil } from "@/utils";
 import { cacheManager } from "@/utils/cache";
 import logger from "@/utils/winston.logger";
 
@@ -77,4 +77,16 @@ export async function deleteUserService(userId: string) {
     cacheManager.del('users:all');
 
     return { ...user, password: '[REDACTED]' }
+}
+
+export async function loginService(email: string, password: string) {
+    const user = await getUserByEmailService(email);
+    if (!user) throw new AppError(Messages.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+
+    const ok = await BcryptUtil.compare(password, user.password);
+    if (!ok) throw new AppError(Messages.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+
+    const token = JwtUtil.generate({ user_id: user.id, email: user.email, name: user.name }, "3D");
+
+    return { token, user: { ...user, password: '[REDACTED]' } };
 }

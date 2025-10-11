@@ -6,6 +6,7 @@ import { Messages } from "@/constants/message";
 import { ZodError } from "zod";
 import { MulterError } from "multer";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { mapPrismaError, isPrismaError } from '@/errors/prisma-error';
 import { HttpStatus } from "@/constants/http-status";
 
 export const notFound = (req: Request, res: Response): void => {
@@ -16,7 +17,7 @@ export const errorHandler = (
     err: any,
     req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ): void => {
     let statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string = Messages.INTERNAL_ERROR;
@@ -47,18 +48,18 @@ export const errorHandler = (
         message = "Invalid file type";
     }
 
-    else if (err instanceof PrismaClientKnownRequestError) {
-        switch (err.code) {
-            case 'P2002':
-                statusCode = HttpStatus.CONFLICT;
-                message = 'Unique constraint failed (duplicate data)';
-                break;
-            case 'P2025':
-                statusCode = HttpStatus.NOT_FOUND;
-                message = 'Record not found';
-                break;
-            default:
-                message = 'A database error occurred';
+    else if (isPrismaError(err) || err instanceof PrismaClientKnownRequestError) {
+        const mapped = mapPrismaError(err);
+        statusCode = mapped.httpStatus ?? HttpStatus.INTERNAL_SERVER_ERROR;
+        // Use the mapped message but preserve a friendlier message for known cases
+        message = mapped.message || 'A database error occurred';
+        // attach extra info to errors array for clients/devs if available
+        const extra = [];
+        if (mapped.meta) extra.push({ meta: mapped.meta });
+        if (mapped.commonCause) extra.push({ cause: mapped.commonCause });
+        if (extra.length) {
+            // merge into errors variable used by response
+            errors = (errors || []).concat(extra);
         }
     }
 

@@ -43,3 +43,10 @@ export const updateUserSchema = z
     });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+export const loginSchema = z.object({
+    email: z.string().nonempty({ message: "Email tidak boleh kosong" }).email({ message: "Email tidak valid" }).transform(s => s.toLowerCase()),
+    password: z.string().nonempty({ message: "Password tidak boleh kosong" })
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;

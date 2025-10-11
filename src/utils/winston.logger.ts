@@ -4,7 +4,6 @@ import path from "path"
 import fs from "fs"
 import DailyRotateFile from "winston-daily-rotate-file"
 
-// Path yang lebih robust - selalu mengarah ke root project
 const LOG_DIR = path.resolve(process.cwd(), 'logs')
 
 // Buat folder logs jika belum ada
@@ -67,7 +66,6 @@ if (!config.isProduction) {
 
 // Add custom logging methods untuk framework
 const frameworkLogger = {
-    // Expose all winston methods
     info: logger.info.bind(logger),
     error: logger.error.bind(logger),
     warn: logger.warn.bind(logger),

@@ -1,607 +1,387 @@
-# Express Framework - Production Ready
+# Template Express.js TypeScript Prisma
 
-Template backend enterprise-grade menggunakan Express.js, TypeScript, dan Prisma ORM. Framework ini dirancang untuk membangun REST API yang scalable dan siap production dengan berbagai fitur canggih.
+Template backend yang kuat dan skalabel yang dibangun dengan Express.js, TypeScript, dan Prisma ORM. Proyek ini menyediakan fondasi yang solid untuk membangun RESTful API dengan autentikasi, manajemen database, caching, dan banyak lagi.
 
-## Fitur Utama
+## 🚀 Fitur
 
-### Core Features
+- **Dukungan TypeScript**: Integrasi TypeScript penuh untuk keamanan tipe
+- **Prisma ORM**: Toolkit database modern dengan akses database yang aman tipe
+- **Autentikasi & Otorisasi**: Autentikasi berbasis JWT dengan hashing password bcrypt
+- **Rate Limiting**: Perlindungan terhadap serangan brute-force
+- **Konfigurasi CORS**: Setup cross-origin resource sharing
+- **Upload File**: Integrasi Multer untuk menangani upload file
+- **Caching**: Dukungan Redis dan caching in-memory
+- **Logging**: Winston logger dengan rotasi harian
+- **Penanganan Error**: Middleware penanganan error yang komprehensif
+- **Validasi**: Validasi schema Zod untuk data request
+- **Keamanan**: Helmet untuk header keamanan, kompresi, dan lainnya
+- **Testing**: Setup Jest dengan integration tests
+- **Dukungan Docker**: Multi-stage Docker build untuk production
+- **Database Seeding**: Seeding database otomatis dengan data sampel
 
-- **TypeScript** - Type safety dan developer experience yang lebih baik
-- **Prisma ORM** - Database abstraction dengan query yang type-safe
-- **Express.js** - Framework web yang minimalis dan powerful
-- **Winston Logger** - Professional logging dengan daily rotation
-- **JWT Authentication** - Siap untuk implementasi autentikasi
-- **Rate Limiting** - Perlindungan dari brute-force attacks
-- **Input Validation** - Validasi request menggunakan Zod
-- **Error Handling** - Centralized error handling dengan custom error classes
+## 🛠 Tech Stack
 
-### Advanced Features
+- **Runtime**: Node.js 20
+- **Framework**: Express.js 5
 
-- **In-Memory Caching** - Cache management dengan NodeCache
-- **Email Service** - Kirim email dengan template
-- **File Upload** - Upload file dengan validasi dan multiple file support
-- **Database Transactions** - Transaction helper dengan retry logic
-- **Background Jobs** - Queue system dengan Bull untuk background processing
-- **Health Checks** - Monitoring sistem dengan endpoint health check
-- **API Versioning** - Manajemen versi API dengan deprecation warnings
-- **Import Alias** - Path alias menggunakan @ seperti Next.js
-- **Cache Warming** - Pre-populate cache saat startup untuk performance optimal
+## Installation & Usage (ringkas)
 
-## Quick Start
+Dokumentasi ini menampilkan cara instalasi, perintah penting, dan contoh cepat membuat struktur: controller → service → repository → route → pendaftaran di `index.routes.ts`.
 
-### 1. Install Dependencies
+Catatan: semua contoh berasumsi Anda bekerja di folder proyek dan sudah menjalankan `npm install`.
+
+### Perintah penting
+
+- `npm run dev` — jalankan server dalam mode development (ts-node-dev)
+- `npm run build` — kompilasi TypeScript ke `dist` dan jalankan `tsc-alias`
+- `npm start` — jalankan versi produksi dari `dist`
+- `npm run lint` / `npm run lint:fix` — linting proyek
+- `npm test` — jalankan test dengan Jest
+- `npm run db:generate`, `npm run db:migrate`, `npm run db:seed`, `npm run db:studio` — perintah Prisma
+
+### Instalasi singkat
+
+```bash
+git clone https://github.com/PitokDf/express-app-useable.git
+cd express-app-useable
+npm install
+cp .env.example .env
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+## Cara membuat fitur baru (pattern recommended)
+
+Berikut contoh langkah singkat membuat resource "Product" dengan pola controller → service → repository → route.
+
+# Template Express.js TypeScript + Prisma
+
+Template backend yang ringkas dan dapat diperluas, dibangun menggunakan Express.js, TypeScript, dan Prisma. Cocok sebagai fondasi RESTful API dengan autentikasi, validasi, logging, dan pola arsitektur repository → service → controller.
+
+## Daftar isi
+
+- [Fitur utama](#fitur-utama)
+- [Teknologi](#teknologi)
+- [Instalasi singkat](#instalasi-singkat)
+- [Perintah penting](#perintah-penting)
+- [Contoh cepat: resource Product](#contoh-cepat-resource-product)
+- [Validasi (Zod) — contoh](#validasi-zod---contoh)
+- [Middleware autentikasi — contoh](#middleware-autentikasi---contoh)
+- [Response helper](#response-helper)
+- [Testing](#testing)
+- [Struktur proyek](#struktur-proyek)
+- [Checklist pra-produksi](#checklist-pra-produksi)
+- [Deployment singkat](#deployment-singkat)
+
+## Fitur utama
+
+- TypeScript untuk keamanan tipe
+- Prisma ORM untuk akses database yang ter-typed
+- Autentikasi JWT dengan opsi penyimpanan token di cookie atau header
+- Validasi input menggunakan Zod
+- Rate limiting, CORS, file upload (Multer)
+- Caching (Redis/in-memory) dan logging (Winston)
+- Docker multi-stage build
+
+## Teknologi
+
+- Node.js 20
+- TypeScript
+- Express 5
+- Prisma
+- Zod
+- jsonwebtoken, bcryptjs
+- Jest (testing)
+
+## Instalasi singkat
+
+1. Clone repository
+
+```bash
+git clone https://github.com/PitokDf/express-app-useable.git
+cd express-app-useable
+```
+
+2. Instal dependency dan siapkan environment
 
 ```bash
 npm install
-```
-
-### 2. Setup Environment
-
-```bash
 cp .env.example .env
+# sesuaikan .env (DATABASE_URL, JWT_SECRET, TOKEN_SET_IN, dsb.)
 ```
 
-Edit file `.env` dan sesuaikan konfigurasi:
+3. Setup database (Prisma)
 
 ```bash
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-SERVICE_NAME=express-framework
-
-# Database
-DATABASE_URL="file:./dev.db"
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-
-# Email (optional)
-EMAIL_USER=your-email@example.com
-EMAIL_PASS=your-email-password
-```
-
-### 3. Setup Database
-
-```bash
-# Generate Prisma client
 npm run db:generate
-
-# Run migrations
 npm run db:migrate
-
-# Seed database (optional)
 npm run db:seed
 ```
 
-### 4. Run Development Server
+4. Jalankan development server
 
 ```bash
 npm run dev
 ```
 
-Server akan start di `http://localhost:3000` dengan output:
+Server default: http://localhost:6789 (base API: /api/v1)
 
-```
-🚀 EXPRESS SERVER READY
-📍 Environment: DEVELOPMENT
-🌐 Service: express-framework
-🔗 URLs:
-   • http://localhost:3000
-   • http://192.168.1.100:3000
-```
+## Perintah penting
 
-### 5. Build for Production
+- npm run dev — development (ts-node-dev)
+- npm run build — build TypeScript ke dist + tsc-alias
+- npm start — jalankan build produksi
+- npm run lint / npm run lint:fix — linting
+- npm test — jalankan test
+- npm run db:generate / db:migrate / db:seed / db:studio — Prisma
 
-```bash
-npm run build
-npm start
-```
+## Contoh cepat: resource Product
 
-## Struktur Project
+Langkah singkat untuk membuat resource Product (pattern repository → service → controller → route).
 
-```
-├── src/
-│   ├── app.ts                 # Express app initialization
-│   ├── index.ts              # Server entry point
-│   ├── config/               # Configuration files
-│   │   ├── index.ts          # Main config
-│   │   └── prisma.ts         # Database config
-│   ├── constants/            # Global constants
-│   ├── controller/           # Request handlers
-│   ├── middleware/           # Express middlewares
-│   ├── repositories/         # Database queries
-│   ├── routes/               # API routes
-│   ├── schemas/              # Zod validation schemas
-│   ├── service/              # Business logic
-│   ├── types/                # TypeScript types
-│   └── utils/                # Utility functions
-│       ├── winston.logger.ts # Logging system
-│       ├── cache.ts          # Cache management
-│       ├── email.ts          # Email service
-│       └── ...
-├── prisma/
-│   ├── schema.prisma         # Database schema
-│   └── db/seed.ts           # Database seeding
-├── tests/                    # Test files
-├── logs/                     # Log files (auto-generated)
-└── uploads/                  # File uploads (auto-generated)
-```
-
-## Import Alias (@)
-
-Framework ini menggunakan import alias seperti Next.js untuk memudahkan import:
-
-```typescript
-// Sebelum (relative path)
-import { config } from "../../config";
-import logger from "../../utils/winston.logger";
-
-// Sesudah (dengan alias)
-import { config } from "@/config";
-import logger from "@/utils/winston.logger";
-```
-
-**Konfigurasi:**
-
-- Development: Alias mengarah ke `src/`
-- Production: Alias mengarah ke `dist/src/` (setelah build)
-
-## Database & ORM
-
-### Prisma Setup
-
-Framework menggunakan Prisma sebagai ORM dengan support untuk:
-
-- SQLite (development)
-- PostgreSQL (production)
-- MySQL
-
-### Schema Example
+1. Tambah model di `prisma/schema.prisma` lalu migrate:
 
 ```prisma
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Product {
+   id    String @id @default(uuid())
+   name  String
+   price Int
 }
 ```
 
-### Basic Queries
+2. Repository — `src/repositories/product.repository.ts`
 
-```typescript
-import { prisma } from "@/config/prisma";
+```ts
+import { db } from "@/config/prisma";
 
-// Create
-const user = await prisma.user.create({
-  data: { email: "user@example.com", name: "John" },
-});
-
-// Read
-const users = await prisma.user.findMany();
-const user = await prisma.user.findUnique({
-  where: { email: "user@example.com" },
-});
-
-// Update
-const updatedUser = await prisma.user.update({
-  where: { id: "user-id" },
-  data: { name: "John Doe" },
-});
-
-// Delete
-await prisma.user.delete({
-  where: { id: "user-id" },
-});
-```
-
-## Caching System
-
-Framework dilengkapi dengan in-memory caching untuk performance optimal:
-
-```typescript
-import { cacheManager } from "@/utils/cache";
-
-// Basic caching
-cacheManager.set("key", data, 3600); // TTL 1 hour
-const cachedData = cacheManager.get("key");
-
-// Cache with service layer
-const users = await getAllUserService(); // Auto-cache with TTL
-// Response time: ~2-5ms (from cache)
-```
-
-### Cache Warming
-
-Cache otomatis di-warm saat startup untuk menghilangkan cold start:
-
-```typescript
-// Automatic cache warming on startup
-[info] 🔥 Warming up cache for frequently accessed data...
-[info] ✅ Cache warmed up with 1 users
-```
-
-## Logging System
-
-Professional logging menggunakan Winston dengan fitur:
-
-- Daily log rotation
-- Structured JSON output
-- Multiple log levels
-- Console dan file output
-
-```typescript
-import logger from "@/utils/winston.logger"
-
-// Basic logging
-logger.info("Server started", { port: 3000 })
-logger.error("Database error", { error: "Connection failed" })
-
-// Request logging (automatic)
-GET /api/users 200 - 2.67ms
-```
-
-### Log Files
-
-```
-logs/
-├── combined-2025-09-08.log    # All logs
-├── error-2025-09-08.log       # Error logs only
-└── combined-2025-09-07.log.gz # Compressed old logs
-```
-
-## API Routes
-
-### Basic Route Structure
-
-```typescript
-import { Router } from "express";
-import { getAllUsers, createUser } from "@/controllers/user.controller";
-
-const router = Router();
-
-router.get("/users", getAllUsers);
-router.post("/users", createUser);
-
-export default router;
-```
-
-### Controller Example
-
-```typescript
-import { Request, Response } from "express";
-import { getAllUserService } from "@/service/user.service";
-
-export async function getAllUsers(req: Request, res: Response) {
-  try {
-    const users = await getAllUserService();
-    res.json({
-      success: true,
-      message: "Success",
-      data: users,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+export class ProductRepository {
+  static findAll() {
+    return db.product.findMany();
+  }
+  static findById(id: string) {
+    return db.product.findUnique({ where: { id } });
+  }
+  static create(data: { name: string; price: number }) {
+    return db.product.create({ data });
+  }
+  static update(id: string, data: Partial<{ name: string; price: number }>) {
+    return db.product.update({ where: { id }, data });
+  }
+  static delete(id: string) {
+    return db.product.delete({ where: { id } });
   }
 }
 ```
 
-## Validation
+3. Service — `src/service/product.service.ts`
 
-Input validation menggunakan Zod schema:
+```ts
+import { ProductRepository } from "@/repositories/product.repository";
 
-```typescript
+export const getAllProducts = async () => ProductRepository.findAll();
+
+export const createProduct = async (payload: { name: string; price: number }) =>
+  ProductRepository.create(payload);
+```
+
+4. Controller — `src/controller/product.controller.ts`
+
+```ts
+import { Request, Response } from "express";
+import { getAllProducts, createProduct } from "@/service/product.service";
+import { ResponseUtil } from "@/utils/response";
+
+export const listProducts = async (req: Request, res: Response) => {
+  const products = await getAllProducts();
+  return ResponseUtil.success(res, products);
+};
+
+export const addProduct = async (req: Request, res: Response) => {
+  const payload = req.body;
+  const product = await createProduct(payload);
+  return ResponseUtil.success(res, product, 201);
+};
+```
+
+5. Route — `src/routes/product.route.ts`
+
+```ts
+import { Router } from "express";
+import { listProducts, addProduct } from "@/controller/product.controller";
+
+const router = Router();
+
+router.get("/", listProducts);
+router.post("/", addProduct);
+
+export default router;
+```
+
+6. Daftarkan pada `src/routes/index.routes.ts`:
+
+```ts
+import { Router } from "express";
+import productRouter from "./product.route";
+
+const apiRouter = Router();
+
+apiRouter.use("/products", productRouter);
+
+export default apiRouter;
+```
+
+Endpoints: GET /api/v1/products, POST /api/v1/products
+
+## Validasi (Zod) — contoh
+
+Contoh schema Zod yang umum digunakan untuk endpoint pembuatan Product dan autentikasi user.
+
+1. Product schema — `src/schemas/product.schema.ts`
+
+```ts
 import { z } from "zod";
 
-// Schema definition
-export const createUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(2).max(100),
-  password: z.string().min(6),
+export const createProductSchema = z.object({
+  name: z.string().min(1, "Nama produk wajib diisi"),
+  price: z.number().int().nonnegative("Harga harus angka dan >= 0"),
 });
 
-// Usage in controller
-import { validateSchema } from "@/middleware/zod.middleware";
-
-router.post("/users", validateSchema(createUserSchema), createUser);
+export type CreateProductInput = z.infer<typeof createProductSchema>;
 ```
 
-## Error Handling
+2. Auth (user) schema — `src/schemas/user.schema.ts`
 
-Centralized error handling dengan custom error classes:
+```ts
+import { z } from "zod";
 
-```typescript
-import { AppError } from "@/errors/app-error"
-import { HttpStatus } from "@/constants/http-status"
+export const loginSchema = z.object({
+  email: z.string().email("Email tidak valid"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+});
 
-// Throw custom error
-throw new AppError("User not found", HttpStatus.NOT_FOUND)
+export const registerSchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi"),
+  email: z.string().email("Email tidak valid"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+});
 
-// Automatic error response
-{
-  "success": false,
-  "message": "User not found",
-  "statusCode": 404
-}
+export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
 ```
 
-## Available Scripts
+Cara pakai: gunakan `zod.middleware` atau middleware kustom untuk mem-parse dan memvalidasi request body sebelum controller dipanggil. Pada project ini tersedia `src/middleware/zod.middleware.ts` sebagai contoh integrasi.
 
-```bash
-# Development
-npm run dev          # Start development server
-npm run build        # Build for production
-npm start           # Start production server
+## Middleware autentikasi — contoh
 
-# Database
-npm run db:generate # Generate Prisma client
-npm run db:migrate  # Run database migrations
-npm run db:seed     # Seed database
-npm run db:studio   # Open Prisma Studio
-npm run db:reset    # Reset database
-npm run db:prepare  # Prepare Prisma client
+Contoh middleware ringkas yang membaca token dari cookie atau header (sesuai env TOKEN_SET_IN) dan memverifikasinya menggunakan util JWT (contoh: `src/utils/jwt.ts`).
 
-# Testing
-npm test            # Run tests
-npm run test:watch  # Run tests in watch mode
-npm run test:coverage # Run tests with coverage report
+```ts
+import { Request, Response, NextFunction } from "express";
+import { JwtUtil } from "@/utils/jwt";
+import config from "@/config";
+
+export const authMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const token =
+      config.TOKEN_SET_IN === "cookie"
+        ? req.cookies?.access_token
+        : req.headers.authorization?.replace(/^Bearer\s+/i, "");
+
+    if (!token)
+      return res.status(401).json({ status: "error", message: "Unauthorized" });
+
+    const payload = JwtUtil.verify(token);
+    // Pasang data user ke req (opsional)
+    (req as any).user = payload;
+    next();
+  } catch (err) {
+    return res
+      .status(401)
+      .json({ status: "error", message: "Token tidak valid" });
+  }
+};
 ```
 
-## Environment Variables
+Pemasangan di route:
 
-### Required
+```ts
+import { Router } from "express";
+import { authMiddleware } from "@/middleware/auth.middleware";
+import productRouter from "./product.route";
 
-```bash
-NODE_ENV=development
-SERVICE_NAME=your-service-name
-DATABASE_URL="file:./dev.db"
-JWT_SECRET=your-secret-key
+const apiRouter = Router();
+
+apiRouter.use("/products", authMiddleware, productRouter);
 ```
 
-### Optional
+Catatan: login endpoint biasanya tidak diproteksi; setelah login, token dikembalikan dan dapat disimpan di cookie atau lokal storage sesuai kebijakan keamanan.
 
-```bash
-PORT=3000
-CLIENT_URL=http://localhost:3000
-ALLOWED_ORIGINS=http://localhost:3000,https://yourapp.com
-EMAIL_USER=your-email@example.com
-EMAIL_PASS=your-email-password
-REDIS_HOST=localhost
-CACHE_TTL=3600
-```
+## Response helper
 
-## CORS Configuration
-
-Framework menggunakan konfigurasi CORS yang fleksibel dan aman:
-
-### Development
-
-```bash
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
-```
-
-- Mengizinkan multiple origins untuk development
-- Semua request akan di-log untuk debugging
-
-### Production
-
-```bash
-ALLOWED_ORIGINS=https://yourapp.com,https://admin.yourapp.com,https://api.yourapp.com
-```
-
-- Hanya mengizinkan origins yang terdaftar
-- Requests dari origins yang tidak diizinkan akan ditolak
-
-### Fitur CORS
-
-- ✅ **Function-based validation** - Validasi origins secara dinamis
-- ✅ **Credentials support** - Mendukung cookies dan authorization headers
-- ✅ **Preflight caching** - Cache OPTIONS requests selama 24 jam
-- ✅ **Legacy browser support** - Kompatibel dengan browser lama
-- ✅ **Security-first** - Tidak ada wildcard + credentials conflict
-
-## Message Codes System
-
-Framework ini mendukung **Message Codes** untuk internationalization dan konsistensi messaging. Client dapat menerjemahkan message codes sesuai bahasa yang diinginkan.
-
-### Cara Kerja:
-
-```typescript
-// Response dengan message code
-ResponseUtil.success(res, data, HttpStatus.OK, MessageCodes.SUCCESS);
-
-// Hasil response:
-{
-  "success": true,
-  "message": "Success",           // Message text (untuk backward compatibility)
-  "messageCode": "SUCCESS",       // Message code (untuk client translation)
-  "data": { ... },
-  "timestamp": "2025-09-08T...",
-  "path": "/api/users"
-}
-```
-
-### Available Message Codes:
-
-#### Success Codes:
-
-- `SUCCESS` - General success
-- `CREATED` - Resource created successfully
-- `UPDATED` - Resource updated successfully
-- `DELETED` - Resource deleted successfully
-- `ACCEPTED` - Request accepted for processing
-
-#### Error Codes:
-
-- `BAD_REQUEST` - Invalid request data
-- `UNAUTHORIZED` - Authentication required
-- `FORBIDDEN` - Access denied
-- `NOT_FOUND` - Resource not found
-- `CONFLICT` - Resource conflict
-- `VALIDATION_FAILED` - Input validation failed
-- `INVALID_CREDENTIALS` - Wrong email/password
-- `TOO_MANY_REQUESTS` - Rate limit exceeded
-- `INTERNAL_ERROR` - Server error
-- `SERVICE_UNAVAILABLE` - Service temporarily unavailable
-
-### Penggunaan:
-
-```typescript
-// 1. Success dengan message code
-ResponseUtil.success(res, userData, HttpStatus.OK, MessageCodes.SUCCESS);
-
-// 2. Created dengan message code
-ResponseUtil.created(res, newUser, MessageCodes.CREATED);
-
-// 3. Error dengan message code
-ResponseUtil.notFound(res, MessageCodes.NOT_FOUND);
-
-// 4. Custom error dengan message code
-ResponseUtil.error(res, MessageCodes.VALIDATION_FAILED, validationErrors);
-```
-
-### Keuntungan:
-
-✅ **Internationalization Ready** - Client dapat translate berdasarkan message code  
-✅ **Consistent Messaging** - Message codes terpusat dan terorganisir  
-✅ **Backward Compatible** - Tetap include message text  
-✅ **Type Safe** - TypeScript support untuk message codes  
-✅ **Client Control** - Client dapat mengontrol bahasa tampilan
-
-### Contoh Response:
-
-```json
-// Success Response
-{
-  "success": true,
-  "message": "Success",
-  "messageCode": "SUCCESS",
-  "data": { "id": 1, "name": "John" },
-  "timestamp": "2025-09-08T16:41:28.000Z",
-  "path": "/api/users"
-}
-
-// Error Response
-{
-  "success": false,
-  "message": "Not found",
-  "messageCode": "NOT_FOUND",
-  "timestamp": "2025-09-08T16:41:28.000Z",
-  "path": "/api/users/999"
-}
-```
+Gunakan util `ResponseUtil.success(res, data, status?, message?)` untuk konsistensi response.
 
 ## Testing
 
-Framework menggunakan Jest untuk testing:
-
-```typescript
-import request from "supertest";
-import app from "@/app";
-
-describe("GET /api/users", () => {
-  it("should return users list", async () => {
-    const response = await request(app).get("/api/users").expect(200);
-
-    expect(response.body.success).toBe(true);
-    expect(Array.isArray(response.body.data)).toBe(true);
-  });
-});
-```
-
-## Docker Support
-
-### Dockerfile
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-### Docker Build & Run
+Jalankan test unit/integrasi:
 
 ```bash
-docker build -t express-app .
-docker run -p 3000:3000 --env-file .env express-app
+npm test
+npm run test:coverage
 ```
 
-## Performance Features
+## Struktur proyek (singkat)
 
-### Cache Performance
-
-- **Response Time**: 2-5ms (cached) vs 50-100ms (database)
-- **Cache Hit Rate**: 95%+ untuk frequently accessed data
-- **Memory Usage**: Efficient in-memory storage
-
-### Database Optimization
-
-- **Query Optimization**: Selective field fetching
-- **Connection Pooling**: Prisma built-in connection management
-- **Transaction Support**: ACID compliance untuk complex operations
-
-## Monitoring & Health Checks
-
-### Health Endpoints
-
-```bash
-GET /health      # Overall health status
-GET /health/ready # Readiness probe
-GET /health/live  # Liveness probe
+```
+src/
+├─ config/
+├─ controller/
+├─ middleware/
+├─ routes/
+├─ service/
+├─ repositories/
+├─ schemas/
+└─ utils/
+prisma/
+├─ schema.prisma
+└─ db/seed.ts
 ```
 
-### Log Monitoring
+## Checklist pra-produksi
 
-```bash
-# Monitor real-time logs
-tail -f logs/combined-$(date +%Y-%m-%d).log
+Praktik minimal sebelum deploy ke production:
 
-# Monitor errors only
-tail -f logs/error-$(date +%Y-%m-%d).log
-```
+- [ ] Gunakan JWT_SECRET yang kuat dan simpan di secret manager
+- [ ] Pastikan DATABASE_URL mengarah ke database production (hindari SQLite file)
+- [ ] Batasi ALLOWED_ORIGINS untuk CORS
+- [ ] Konfigurasi HTTPS/TLS di reverse-proxy (NGINX, Cloud, dsb.)
+- [ ] Nonaktifkan logging debug dan kurangi log level
+- [ ] Audit dependensi (npm audit / Snyk / Dependabot)
+- [ ] Backup & migration strategy untuk database
+- [ ] Rate-limit yang sesuai untuk endpoint sensitif
+- [ ] Pastikan environment variables sensitif tidak ter-commit
 
-## Production Deployment
+## Deployment singkat
 
-### Environment Setup
+- Vercel: konfigurasi build dan environment variables di dashboard
+- Docker: gunakan docker-compose untuk menggabungkan layanan seperti Redis, Postgres
 
-```bash
-NODE_ENV=production
-DATABASE_URL="postgresql://user:pass@host:5432/db"
-REDIS_HOST=redis-production-host
-EMAIL_USER=production-email@example.com
-```
+## Kredensial seed (default)
 
-### Process Management
+- Email: admin@example.com
+- Password: admin123
 
-Gunakan PM2 untuk production:
+> Catatan keamanan: ubah kredensial seed dan kunci sebelum production.
 
-```bash
-npm install -g pm2
-pm2 start dist/src/index.js --name "express-app"
-```
+## Kontribusi
 
-## Contributing
+Silakan fork, buat branch fitur, dan buka PR. Sertakan deskripsi perubahan dan testing singkat.
 
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/new-feature`)
-3. Commit changes (`git commit -am 'Add new feature'`)
-4. Push to branch (`git push origin feature/new-feature`)
-5. Create Pull Request
+## Lisensi
 
-## License
-
-MIT License - feel free to use this project for your applications.
-
-## Author
-
-Pito Desri Pauzi
+MIT — Pito Desri Pauzi

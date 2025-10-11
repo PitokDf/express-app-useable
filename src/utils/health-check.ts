@@ -344,7 +344,7 @@ class HealthCheckService {
         this.registerChecker('disk', async (): Promise<HealthCheckResult> => {
             try {
                 const fs = await import('fs');
-                const stats = fs.statSync(process.cwd());
+                fs.statSync(process.cwd());
 
                 // This is a simplified check - in production, you might want to use a more sophisticated disk space check
                 return {

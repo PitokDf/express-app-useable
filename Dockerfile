@@ -31,5 +31,5 @@ RUN apk add --no-cache openssl libstdc++ ca-certificates
 # Hanya install Prisma CLI sebagai runtime dependency (tidak perlu generate lagi di sini)
 RUN npm install prisma --omit=dev --no-fund --no-audit --ignore-scripts
 
-EXPOSE 4444
+EXPOSE 6789
 CMD ["npm", "start"]

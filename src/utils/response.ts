@@ -1,4 +1,4 @@
-import { Response, Request } from "express"
+import { Response } from "express";
 import { ApiResponse, PaginatedResponse } from "@/types/response";
 import { HttpStatus } from "@/constants/http-status";
 import { MessageCode, MessageCodes, getMessageByCode } from "@/constants/message";
@@ -19,17 +19,44 @@ export class ResponseUtil {
             message,
             ...(data !== null ? { data } : {}),
             ...(errors ? { errors } : {}),
+            ...(messageCode ? { messageCode } : {}),
             ...extra,
             timestamp: new Date().toISOString(),
             path: res.req.originalUrl
         };
+        return res.status(statusCode).json(response);
+    }
 
-        // Add messageCode if provided
-        if (messageCode) {
-            response.messageCode = messageCode;
+    /**
+     * Helper privat untuk memproses message atau messageCode.
+     * Mengembalikan objek berisi pesan final dan messageCode (jika ada).
+     */
+    private static _resolveMessageAndCode(
+        messageOrCode?: string | MessageCode,
+        defaultCode?: MessageCode
+    ): { message: string; messageCode?: MessageCode } {
+        // Jika inputnya adalah MessageCode yang valid
+        if (typeof messageOrCode === 'string' && Object.values(MessageCodes).includes(messageOrCode as MessageCode)) {
+            return {
+                message: getMessageByCode(messageOrCode as MessageCode),
+                messageCode: messageOrCode as MessageCode,
+            };
         }
 
-        return res.status(statusCode).json(response);
+        // Jika inputnya adalah string biasa (bukan MessageCode)
+        if (typeof messageOrCode === 'string') {
+            return { message: messageOrCode, messageCode: undefined };
+        }
+
+        // Jika tidak ada input sama sekali, gunakan defaultCode
+        if (defaultCode) {
+            return {
+                message: getMessageByCode(defaultCode),
+                messageCode: defaultCode,
+            };
+        }
+
+        return { message: "An unexpected error occurred.", messageCode: undefined };
     }
 
     static success<T>(
@@ -50,17 +77,11 @@ export class ResponseUtil {
         statusCode: HttpStatus = HttpStatus.OK,
         messageOrCode?: string | MessageCode
     ): Response<ApiResponse<T>> {
-        if (typeof messageOrCode === 'string' && Object.values(MessageCodes).includes(messageOrCode as MessageCode)) {
-            // Using message code
-            const message = getMessageByCode(messageOrCode as MessageCode);
-            return this.base(res, true, message, data, statusCode, undefined, undefined, messageOrCode as MessageCode);
-        } else if (messageOrCode && typeof messageOrCode === 'string') {
-            // Using message text
-            return this.base(res, true, messageOrCode, data, statusCode);
-        } else {
-            // Default success
-            return this.base(res, true, "Success", data, statusCode);
+        if (messageOrCode) {
+            const { message, messageCode } = this._resolveMessageAndCode(messageOrCode);
+            return this.base(res, true, message, data, statusCode, undefined, undefined, messageCode);
         }
+        return this.base(res, true, "Success", data, statusCode);
     }
 
     static error(
@@ -81,18 +102,43 @@ export class ResponseUtil {
         errors?: any[],
         statusCode: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR
     ): Response<ApiResponse<null>> {
-        if (typeof messageOrCode === 'string' && Object.values(MessageCodes).includes(messageOrCode as MessageCode)) {
-            // Using message code
-            const message = getMessageByCode(messageOrCode as MessageCode);
-            return this.base(res, false, message, null, statusCode, errors, undefined, messageOrCode as MessageCode);
-        } else if (messageOrCode && typeof messageOrCode === 'string') {
-            // Using message text
-            return this.base(res, false, messageOrCode, null, statusCode, errors);
-        } else {
-            // Default error
-            const message = getMessageByCode(MessageCodes.INTERNAL_ERROR);
-            return this.base(res, false, message, null, statusCode, errors, undefined, MessageCodes.INTERNAL_ERROR);
-        }
+        const { message, messageCode } = this._resolveMessageAndCode(messageOrCode, MessageCodes.INTERNAL_ERROR);
+        return this.base(res, false, message, null, statusCode, errors, undefined, messageCode);
+    }
+
+    static notFound(
+        res: Response,
+        message?: string
+    ): Response<ApiResponse<null>>;
+    static notFound(
+        res: Response,
+        messageCode: MessageCode
+    ): Response<ApiResponse<null>>;
+    static notFound(
+        res: Response,
+        messageOrCode?: string | MessageCode
+    ): Response<ApiResponse<null>> {
+        const { message, messageCode } = this._resolveMessageAndCode(messageOrCode, MessageCodes.NOT_FOUND);
+        return this.base(res, false, message, null, HttpStatus.NOT_FOUND, undefined, undefined, messageCode);
+    }
+
+    static created<T>(
+        res: Response,
+        data: T,
+        message?: string
+    ): Response<ApiResponse<T>>;
+    static created<T>(
+        res: Response,
+        data: T,
+        messageCode: MessageCode
+    ): Response<ApiResponse<T>>;
+    static created<T>(
+        res: Response,
+        data: T,
+        messageOrCode?: string | MessageCode
+    ): Response<ApiResponse<T>> {
+        const { message, messageCode } = this._resolveMessageAndCode(messageOrCode, MessageCodes.CREATED);
+        return this.base(res, true, message, data, HttpStatus.CREATED, undefined, undefined, messageCode);
     }
 
     static validationError(
@@ -123,58 +169,6 @@ export class ResponseUtil {
         message = 'Forbidden'
     ): Response<ApiResponse<null>> {
         return this.base(res, false, message, null, HttpStatus.FORBIDDEN);
-    }
-
-    static notFound(
-        res: Response,
-        message?: string
-    ): Response<ApiResponse<null>>;
-    static notFound(
-        res: Response,
-        messageCode: MessageCode
-    ): Response<ApiResponse<null>>;
-    static notFound(
-        res: Response,
-        messageOrCode?: string | MessageCode
-    ): Response<ApiResponse<null>> {
-        if (typeof messageOrCode === 'string' && !Object.values(MessageCodes).includes(messageOrCode as MessageCode)) {
-            return this.base(res, false, messageOrCode, null, HttpStatus.NOT_FOUND, undefined, undefined, MessageCodes.NOT_FOUND);
-        } else if (messageOrCode && typeof messageOrCode === 'string') {
-            const message = getMessageByCode(messageOrCode as MessageCode);
-            return this.base(res, false, message, null, HttpStatus.NOT_FOUND, undefined, undefined, messageOrCode as MessageCode);
-        } else {
-            const message = getMessageByCode(MessageCodes.NOT_FOUND);
-            return this.base(res, false, message, null, HttpStatus.NOT_FOUND, undefined, undefined, MessageCodes.NOT_FOUND);
-        }
-    }
-
-    static created<T>(
-        res: Response,
-        data: T,
-        message?: string
-    ): Response<ApiResponse<T>>;
-    static created<T>(
-        res: Response,
-        data: T,
-        messageCode: MessageCode
-    ): Response<ApiResponse<T>>;
-    static created<T>(
-        res: Response,
-        data: T,
-        messageOrCode?: string | MessageCode
-    ): Response<ApiResponse<T>> {
-        if (typeof messageOrCode === 'string' && !Object.values(MessageCodes).includes(messageOrCode as MessageCode)) {
-            // Using message text
-            return this.base(res, true, messageOrCode, data, HttpStatus.CREATED);
-        } else if (messageOrCode && typeof messageOrCode === 'string') {
-            // Using message code
-            const message = getMessageByCode(messageOrCode as MessageCode);
-            return this.base(res, true, message, data, HttpStatus.CREATED, undefined, undefined, messageOrCode as MessageCode);
-        } else {
-            // Default created
-            const message = getMessageByCode(MessageCodes.CREATED);
-            return this.base(res, true, message, data, HttpStatus.CREATED, undefined, undefined, MessageCodes.CREATED);
-        }
     }
 
     static noContent(
@@ -208,16 +202,9 @@ export class ResponseUtil {
         total: number,
         message = 'Success'
     ): Response<PaginatedResponse<T>> {
-        // Validation
-        if (limit <= 0) {
-            throw new Error('Limit must be greater than 0');
-        }
-        if (page < 1) {
-            throw new Error('Page must be greater than 0');
-        }
-        if (total < 0) {
-            throw new Error('Total must be non-negative');
-        }
+        if (limit <= 0) throw new Error('Limit must be greater than 0');
+        if (page < 1) throw new Error('Page must be greater than 0');
+        if (total < 0) throw new Error('Total must be non-negative');
 
         const totalPages = Math.ceil(total / limit);
         const hasNext = page < totalPages;
@@ -225,30 +212,10 @@ export class ResponseUtil {
 
         return this.base(res, true, message, data, HttpStatus.OK, undefined, {
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages,
-                hasNext,
-                hasPrev,
+                page, limit, total, totalPages, hasNext, hasPrev,
                 nextPage: hasNext ? page + 1 : null,
                 prevPage: hasPrev ? page - 1 : null,
             },
         });
     }
 }
-
-// Helper functions for quick responses
-export const successResponse = <T>(message: string, data?: T, extra?: Record<string, any>) => ({
-    success: true,
-    message,
-    ...(data !== undefined ? { data } : {}),
-    ...extra
-});
-
-export const errorResponse = (message: string, errors?: any[], extra?: Record<string, any>) => ({
-    success: false,
-    message,
-    ...(errors ? { errors } : {}),
-    ...extra
-});

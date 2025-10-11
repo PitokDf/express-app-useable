@@ -1,14 +1,17 @@
 
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService } from "@/service/user.service";
+import { loginService } from "@/service/user.service";
 import { ResponseUtil } from "@/utils/response";
 import { asyncHandler } from "@/middleware/error.middleware";
 import { HttpStatus } from "@/constants/http-status";
 import { MessageCodes } from "@/constants/message";
+import { Auth } from "@/utils/auth";
 
 export const getAllUserController = asyncHandler(async (req: Request, res: Response) => {
     const users = await getAllUserService()
-
+    const authUser = req.auth_user
+    console.log(authUser);
     return ResponseUtil.success(res, users, HttpStatus.OK, MessageCodes.SUCCESS)
 })
 
@@ -40,3 +43,11 @@ export const deleteUserController = asyncHandler(async (req: Request, res: Respo
 
     return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.DELETED)
 })
+
+export const loginController = asyncHandler(async (req: Request, res: Response) => {
+    const payload = req.body;
+    const result = await loginService(payload.email, payload.password);
+    Auth.setTokenCookieHttpOnly(res, result.token, { duration: 3, unit: "d" })
+
+    return ResponseUtil.success(res, result.user, HttpStatus.OK, "Login berhasil");
+});
