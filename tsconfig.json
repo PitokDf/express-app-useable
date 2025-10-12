@@ -34,12 +34,12 @@
     },
   },
   "include": [
-    "src/*",
-    "src/*/*.ts",
-    "prisma/*",
-    "prisma/*/*ts"
+    "src/**/*",
+    "prisma/**/*",
+    "tests/**/*"
   ],
   "exclude": [
-    "tests/*"
+    "node_modules",
+    "dist"
   ]
 }

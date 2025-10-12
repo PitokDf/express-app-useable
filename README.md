@@ -1,387 +1,650 @@
-# Template Express.js TypeScript Prisma
+# Express TypeScript Starter Template
 
-Template backend yang kuat dan skalabel yang dibangun dengan Express.js, TypeScript, dan Prisma ORM. Proyek ini menyediakan fondasi yang solid untuk membangun RESTful API dengan autentikasi, manajemen database, caching, dan banyak lagi.
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue)
 
-## 🚀 Fitur
+Template production-ready untuk membangun REST API menggunakan Express.js, TypeScript, dan Prisma ORM dengan arsitektur yang scalable dan maintainable.
 
-- **Dukungan TypeScript**: Integrasi TypeScript penuh untuk keamanan tipe
-- **Prisma ORM**: Toolkit database modern dengan akses database yang aman tipe
-- **Autentikasi & Otorisasi**: Autentikasi berbasis JWT dengan hashing password bcrypt
-- **Rate Limiting**: Perlindungan terhadap serangan brute-force
-- **Konfigurasi CORS**: Setup cross-origin resource sharing
-- **Upload File**: Integrasi Multer untuk menangani upload file
-- **Caching**: Dukungan Redis dan caching in-memory
-- **Logging**: Winston logger dengan rotasi harian
-- **Penanganan Error**: Middleware penanganan error yang komprehensif
-- **Validasi**: Validasi schema Zod untuk data request
-- **Keamanan**: Helmet untuk header keamanan, kompresi, dan lainnya
-- **Testing**: Setup Jest dengan integration tests
-- **Dukungan Docker**: Multi-stage Docker build untuk production
-- **Database Seeding**: Seeding database otomatis dengan data sampel
+## 📑 Daftar Isi
 
-## 🛠 Tech Stack
+- [Fitur Utama](#-fitur-utama)
+- [Instalasi](#-instalasi)
+- [Scripts yang Tersedia](#-scripts-yang-tersedia)
+- [Struktur Proyek](#-struktur-proyek)
+- [Panduan Penggunaan](#-panduan-penggunaan)
+- [Response Format](#-response-format)
+- [Keunggulan Template](#-keunggulan-template)
 
-- **Runtime**: Node.js 20
-- **Framework**: Express.js 5
+## ✨ Fitur Utama
 
-## Installation & Usage (ringkas)
+- ⚡ **TypeScript** - Full type safety dengan strict mode
+- 🗄️ **Prisma ORM** - Type-safe database access dengan migrations
+- 🔐 **JWT Authentication** - Token-based auth (Bearer header / HTTP-only cookie)
+- 🛡️ **Security First** - Helmet, CORS, Rate Limiting, Bcrypt
+- ✅ **Zod Validation** - Runtime type checking & validation
+- 🚀 **Caching System** - Built-in node-cache dengan pattern matching
+- 📝 **Winston Logger** - Daily rotating file logs
+- 🏗️ **Clean Architecture** - Repository → Service → Controller pattern
+- 🔥 **Hot Reload** - Fast development dengan ts-node-dev
+- 🧪 **Testing Ready** - Jest configuration untuk unit & integration tests
+- 📦 **Docker Support** - Container-ready dengan Dockerfile
+- 📤 **File Upload** - Multer integration
+- 🎨 **Code Quality** - ESLint + Prettier configured
 
-Dokumentasi ini menampilkan cara instalasi, perintah penting, dan contoh cepat membuat struktur: controller → service → repository → route → pendaftaran di `index.routes.ts`.
+## 📥 Instalasi
 
-Catatan: semua contoh berasumsi Anda bekerja di folder proyek dan sudah menjalankan `npm install`.
-
-### Perintah penting
-
-- `npm run dev` — jalankan server dalam mode development (ts-node-dev)
-- `npm run build` — kompilasi TypeScript ke `dist` dan jalankan `tsc-alias`
-- `npm start` — jalankan versi produksi dari `dist`
-- `npm run lint` / `npm run lint:fix` — linting proyek
-- `npm test` — jalankan test dengan Jest
-- `npm run db:generate`, `npm run db:migrate`, `npm run db:seed`, `npm run db:studio` — perintah Prisma
-
-### Instalasi singkat
+### Menggunakan NPX (Recommended)
 
 ```bash
-git clone https://github.com/PitokDf/express-app-useable.git
-cd express-app-useable
+npx install-express create <nama-project>
+cd <nama-project>
 npm install
+```
+
+### Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/PitokDf/express-app-useable.git <nama-project>
+cd <nama-project>
+
+# Install dependencies
+npm install
+
+# Setup environment variables
 cp .env.example .env
+# Edit file .env sesuai kebutuhan
+
+# Generate Prisma Client
 npm run db:generate
+
+# Run migrations
 npm run db:migrate
+
+# Seed database (optional)
 npm run db:seed
+
+# Start development server
 npm run dev
 ```
 
-## Cara membuat fitur baru (pattern recommended)
+## 📜 Scripts yang Tersedia
 
-Berikut contoh langkah singkat membuat resource "Product" dengan pola controller → service → repository → route.
+### Development
 
-# Template Express.js TypeScript + Prisma
+| Script          | Fungsi             | Deskripsi                                                         |
+| --------------- | ------------------ | ----------------------------------------------------------------- |
+| `npm run dev`   | Development server | Jalankan server dengan hot-reload, auto-restart saat file berubah |
+| `npm run build` | Build production   | Compile TypeScript → JavaScript ke folder `dist/`                 |
+| `npm start`     | Run production     | Jalankan compiled code dari `dist/` (perlu build dulu)            |
 
-Template backend yang ringkas dan dapat diperluas, dibangun menggunakan Express.js, TypeScript, dan Prisma. Cocok sebagai fondasi RESTful API dengan autentikasi, validasi, logging, dan pola arsitektur repository → service → controller.
+### Code Quality
 
-## Daftar isi
+| Script             | Fungsi     | Deskripsi                                             |
+| ------------------ | ---------- | ----------------------------------------------------- |
+| `npm run lint`     | Check code | Analyze code dengan ESLint untuk error & style issues |
+| `npm run lint:fix` | Fix code   | Auto-fix linting issues (format, unused imports, dll) |
 
-- [Fitur utama](#fitur-utama)
-- [Teknologi](#teknologi)
-- [Instalasi singkat](#instalasi-singkat)
-- [Perintah penting](#perintah-penting)
-- [Contoh cepat: resource Product](#contoh-cepat-resource-product)
-- [Validasi (Zod) — contoh](#validasi-zod---contoh)
-- [Middleware autentikasi — contoh](#middleware-autentikasi---contoh)
-- [Response helper](#response-helper)
-- [Testing](#testing)
-- [Struktur proyek](#struktur-proyek)
-- [Checklist pra-produksi](#checklist-pra-produksi)
-- [Deployment singkat](#deployment-singkat)
+### Testing
 
-## Fitur utama
+| Script                  | Fungsi          | Deskripsi                                      |
+| ----------------------- | --------------- | ---------------------------------------------- |
+| `npm test`              | Run tests       | Jalankan semua Jest test suites                |
+| `npm run test:watch`    | Watch mode      | Re-run tests otomatis saat file berubah (TDD)  |
+| `npm run test:coverage` | Coverage report | Generate coverage report di folder `coverage/` |
 
-- TypeScript untuk keamanan tipe
-- Prisma ORM untuk akses database yang ter-typed
-- Autentikasi JWT dengan opsi penyimpanan token di cookie atau header
-- Validasi input menggunakan Zod
-- Rate limiting, CORS, file upload (Multer)
-- Caching (Redis/in-memory) dan logging (Winston)
-- Docker multi-stage build
+### Database (Prisma)
 
-## Teknologi
+| Script                | Fungsi           | Deskripsi                                                   |
+| --------------------- | ---------------- | ----------------------------------------------------------- |
+| `npm run db:generate` | Generate client  | Generate Prisma Client (run setelah update schema)          |
+| `npm run db:migrate`  | Apply migrations | Create & apply migration dari schema changes                |
+| `npm run db:seed`     | Seed data        | Populate database dengan data awal dari `prisma/db/seed.ts` |
+| `npm run db:studio`   | Database GUI     | Buka Prisma Studio di `http://localhost:5555`               |
+| `npm run db:reset`    | Reset database   | ⚠️ DESTRUCTIVE: Drop DB, re-apply migrations & seed         |
+| `npm run db:prepare`  | Prepare client   | Generate client tanpa migration (untuk CI/CD)               |
 
-- Node.js 20
-- TypeScript
-- Express 5
-- Prisma
-- Zod
-- jsonwebtoken, bcryptjs
-- Jest (testing)
+## 📁 Struktur Proyek
 
-## Instalasi singkat
-
-1. Clone repository
-
-```bash
-git clone https://github.com/PitokDf/express-app-useable.git
-cd express-app-useable
+```
+express-app-useable/
+├── prisma/
+│   ├── schema.prisma           # Database schema
+│   ├── migrations/             # Database migrations
+│   └── db/
+│       └── seed.ts            # Database seeding script
+├── src/
+│   ├── app.ts                 # Express app configuration
+│   ├── index.ts               # Application entry point
+│   ├── config/                # Configuration files
+│   │   ├── cors.ts           # CORS configuration
+│   │   ├── index.ts          # Config exports
+│   │   └── prisma.ts         # Prisma client instance
+│   ├── constants/             # Application constants
+│   │   ├── app.ts
+│   │   ├── http-status.ts    # HTTP status codes
+│   │   ├── message.ts        # Response messages
+│   │   ├── regex.ts          # Regex patterns
+│   │   └── time.ts           # Time constants
+│   ├── controller/            # Route controllers
+│   │   └── user.controller.ts
+│   ├── errors/                # Custom error classes
+│   │   ├── app-error.ts
+│   │   └── prisma-error.ts
+│   ├── middleware/            # Express middlewares
+│   │   ├── auth.middleware.ts        # JWT authentication
+│   │   ├── error.middleware.ts       # Error handling
+│   │   ├── logging.middleware.ts     # Request logging
+│   │   ├── rate-limit.middleware.ts  # Rate limiting
+│   │   └── zod.middleware.ts         # Schema validation
+│   ├── repositories/          # Data access layer
+│   │   └── user.repository.ts
+│   ├── routes/                # API routes
+│   │   ├── index.routes.ts   # Main router
+│   │   └── user.route.ts     # User routes
+│   ├── schemas/               # Zod validation schemas
+│   │   └── user.schema.ts
+│   ├── service/               # Business logic layer
+│   │   └── user.service.ts
+│   ├── types/                 # TypeScript type definitions
+│   │   └── response.ts
+│   ├── utils/                 # Utility functions
+│   │   ├── app-utils.ts
+│   │   ├── auth.ts           # Authentication utilities
+│   │   ├── bcrypt.ts         # Password hashing
+│   │   ├── cache.ts          # Caching utilities
+│   │   ├── code-generator.ts # Unique code generation
+│   │   ├── database-transaction.ts
+│   │   ├── date.ts           # Date utilities
+│   │   ├── file-upload.ts    # File upload handling
+│   │   ├── health-check.ts   # Health check utilities
+│   │   ├── jwt.ts            # JWT utilities
+│   │   ├── response.ts       # Response formatting
+│   │   ├── string.ts         # String utilities
+│   │   └── winston.logger.ts # Logger configuration
+│   └── validators/            # Custom validators
+│       └── user.validator.ts
+├── tests/                     # Test files
+│   └── user.integration.test.ts
+├── uploads/                   # Uploaded files directory
+├── logs/                      # Application logs
+├── .env                       # Environment variables
+├── .env.example              # Environment variables template
+├── Dockerfile                # Docker configuration
+├── docker-compose.yml        # Docker Compose configuration
+├── tsconfig.json             # TypeScript configuration
+├── jest.config.js            # Jest configuration
+├── eslint.config.cjs         # ESLint configuration
+├── package.json              # Dependencies dan scripts
+└── README.md                 # Documentation
 ```
 
-2. Instal dependency dan siapkan environment
+## 📚 Panduan Penggunaan
 
-```bash
-npm install
-cp .env.example .env
-# sesuaikan .env (DATABASE_URL, JWT_SECRET, TOKEN_SET_IN, dsb.)
-```
+Template ini menggunakan **Clean Architecture** dengan pattern: **Repository → Service → Controller**
 
-3. Setup database (Prisma)
+### 1. Membuat Service Baru
 
-```bash
-npm run db:generate
-npm run db:migrate
-npm run db:seed
-```
+Service layer berisi **business logic** aplikasi. Contoh `product.service.ts`:
 
-4. Jalankan development server
+```typescript
+// src/service/product.service.ts
+import { HttpStatus } from "@/constants/http-status";
+import { Messages } from "@/constants/message";
+import { AppError } from "@/errors/app-error";
+import { ProductRepository } from "@/repositories/product.repository";
+import { CreateProductInput } from "@/schemas/product.schema";
+import { cacheManager } from "@/utils/cache";
+import logger from "@/utils/winston.logger";
 
-```bash
-npm run dev
-```
+// Get all products dengan pagination & caching
+export async function getAllProductService(query?: {
+  page?: number;
+  limit?: number;
+}) {
+  const page = query?.page || 1;
+  const limit = query?.limit || 10;
+  const skip = (page - 1) * limit;
 
-Server default: http://localhost:6789 (base API: /api/v1)
+  const cacheKey = `products:all:page:${page}:limit:${limit}`;
 
-## Perintah penting
+  // Cek cache dulu
+  const cached = cacheManager.get(cacheKey);
+  if (cached) return cached;
 
-- npm run dev — development (ts-node-dev)
-- npm run build — build TypeScript ke dist + tsc-alias
-- npm start — jalankan build produksi
-- npm run lint / npm run lint:fix — linting
-- npm test — jalankan test
-- npm run db:generate / db:migrate / db:seed / db:studio — Prisma
+  // Ambil dari database
+  const [products, total] = await Promise.all([
+    ProductRepository.findAllOptimized({ skip, take: limit }),
+    ProductRepository.count(),
+  ]);
 
-## Contoh cepat: resource Product
+  const result = {
+    data: products,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
 
-Langkah singkat untuk membuat resource Product (pattern repository → service → controller → route).
-
-1. Tambah model di `prisma/schema.prisma` lalu migrate:
-
-```prisma
-model Product {
-   id    String @id @default(uuid())
-   name  String
-   price Int
+  // Simpan ke cache (5 menit)
+  cacheManager.set(cacheKey, result, 300);
+  return result;
 }
+
+// Get product by ID
+export async function getProductByIdService(id: string) {
+  const product = await ProductRepository.findById(id);
+  if (!product) throw new AppError(Messages.NOT_FOUND, HttpStatus.NOT_FOUND);
+  return product;
+}
+
+// Create product
+export async function createProductService(data: CreateProductInput) {
+  // Business logic: validasi price
+  if (data.price <= 0) {
+    throw new AppError("Price must be greater than 0", HttpStatus.BAD_REQUEST);
+  }
+
+  const product = await ProductRepository.create(data);
+
+  // Invalidate cache setelah create
+  cacheManager.delPattern("products:all:page:");
+
+  logger.info("Product created", { productId: product.id });
+  return product;
+}
+
+// Update & Delete service... (similar pattern)
 ```
 
-2. Repository — `src/repositories/product.repository.ts`
+**Key Points:**
 
-```ts
+- ✅ Business logic & validation di sini
+- ✅ Gunakan Repository untuk database access
+- ✅ Throw `AppError` untuk error handling
+- ✅ Implement caching untuk performa
+- ✅ Invalidate cache saat data berubah
+- ✅ Log actions penting
+
+---
+
+### 2. Membuat Repository Baru
+
+Repository layer untuk **database operations** saja (no business logic). Contoh `product.repository.ts`:
+
+```typescript
+// src/repositories/product.repository.ts
+import { Product } from "@prisma/client";
 import { db } from "@/config/prisma";
 
 export class ProductRepository {
-  static findAll() {
-    return db.product.findMany();
-  }
-  static findById(id: string) {
+  static async findById(id: string): Promise<Product | null> {
     return db.product.findUnique({ where: { id } });
   }
-  static create(data: { name: string; price: number }) {
+
+  // Optimized: select specific fields only
+  static async findAllOptimized(options?: { skip?: number; take?: number }) {
+    return db.product.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        description: true,
+      },
+      skip: options?.skip,
+      take: options?.take,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  static async count(): Promise<number> {
+    return db.product.count();
+  }
+
+  static async create(
+    data: Pick<Product, "name" | "price" | "description">
+  ): Promise<Product> {
     return db.product.create({ data });
   }
-  static update(id: string, data: Partial<{ name: string; price: number }>) {
+
+  static async update(
+    id: string,
+    data: Partial<Pick<Product, "name" | "price">>
+  ): Promise<Product> {
     return db.product.update({ where: { id }, data });
   }
-  static delete(id: string) {
+
+  static async delete(id: string): Promise<Product> {
     return db.product.delete({ where: { id } });
   }
 }
 ```
 
-3. Service — `src/service/product.service.ts`
+**Key Points:**
 
-```ts
-import { ProductRepository } from "@/repositories/product.repository";
+- ✅ Pure database operations (CRUD only)
+- ✅ Use static methods
+- ✅ Type-safe dengan Prisma types
+- ✅ Optimized queries (select specific fields)
+- ✅ No business logic di sini
 
-export const getAllProducts = async () => ProductRepository.findAll();
+---
 
-export const createProduct = async (payload: { name: string; price: number }) =>
-  ProductRepository.create(payload);
-```
+### 3. Membuat Controller Baru
 
-4. Controller — `src/controller/product.controller.ts`
+Controller menangani **HTTP requests dan responses**. Contoh `product.controller.ts`:
 
-```ts
+```typescript
+// src/controller/product.controller.ts
 import { Request, Response } from "express";
-import { getAllProducts, createProduct } from "@/service/product.service";
+import {
+  getAllProductService,
+  getProductByIdService,
+  createProductService,
+} from "@/service/product.service";
 import { ResponseUtil } from "@/utils/response";
+import { asyncHandler } from "@/middleware/error.middleware";
+import { HttpStatus } from "@/constants/http-status";
+import { MessageCodes } from "@/constants/message";
 
-export const listProducts = async (req: Request, res: Response) => {
-  const products = await getAllProducts();
-  return ResponseUtil.success(res, products);
-};
+// Get all products
+export const getAllProductController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const page = req.query.page ? parseInt(req.query.page as string) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
 
-export const addProduct = async (req: Request, res: Response) => {
-  const payload = req.body;
-  const product = await createProduct(payload);
-  return ResponseUtil.success(res, product, 201);
-};
+    const result = await getAllProductService({ page, limit });
+
+    return ResponseUtil.success(
+      res,
+      result,
+      HttpStatus.OK,
+      MessageCodes.SUCCESS
+    );
+  }
+);
+
+// Get product by ID
+export const getProductByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const product = await getProductByIdService(req.params.productId);
+    return ResponseUtil.success(res, product);
+  }
+);
+
+// Create product
+export const createProductController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const product = await createProductService(req.body);
+    return ResponseUtil.created(res, product, MessageCodes.CREATED);
+  }
+);
 ```
 
-5. Route — `src/routes/product.route.ts`
+**Key Points:**
 
-```ts
+- ✅ Use `asyncHandler` untuk auto error handling
+- ✅ Extract data dari request (params, query, body)
+- ✅ Call service layer
+- ✅ Return response dengan `ResponseUtil`
+- ✅ Keep thin - no business logic di sini
+
+---
+
+### 4. Membuat Routes & Schema
+
+**Routes** menghubungkan URL dengan controllers:
+
+```typescript
+// src/routes/product.route.ts
 import { Router } from "express";
-import { listProducts, addProduct } from "@/controller/product.controller";
+import {
+  getAllProductController,
+  createProductController,
+} from "@/controller/product.controller";
+import { validateSchema } from "@/middleware/zod.middleware";
+import { createProductSchema } from "@/schemas/product.schema";
+import authMiddleware from "@/middleware/auth.middleware";
 
-const router = Router();
+const productRouter = Router();
 
-router.get("/", listProducts);
-router.post("/", addProduct);
+// Public routes
+productRouter.get("/", getAllProductController);
+productRouter.get("/:productId", getProductByIdController);
 
-export default router;
+// Protected routes (perlu auth)
+productRouter.use(authMiddleware);
+productRouter.post(
+  "/",
+  validateSchema(createProductSchema),
+  createProductController
+);
+
+export default productRouter;
 ```
 
-6. Daftarkan pada `src/routes/index.routes.ts`:
+**Validation Schema** dengan Zod:
 
-```ts
-import { Router } from "express";
-import productRouter from "./product.route";
-
-const apiRouter = Router();
-
-apiRouter.use("/products", productRouter);
-
-export default apiRouter;
-```
-
-Endpoints: GET /api/v1/products, POST /api/v1/products
-
-## Validasi (Zod) — contoh
-
-Contoh schema Zod yang umum digunakan untuk endpoint pembuatan Product dan autentikasi user.
-
-1. Product schema — `src/schemas/product.schema.ts`
-
-```ts
+```typescript
+// src/schemas/product.schema.ts
 import { z } from "zod";
 
 export const createProductSchema = z.object({
-  name: z.string().min(1, "Nama produk wajib diisi"),
-  price: z.number().int().nonnegative("Harga harus angka dan >= 0"),
+  body: z.object({
+    name: z.string().min(3).max(100),
+    price: z.number().positive(),
+    description: z.string().max(500).optional(),
+  }),
 });
 
-export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>["body"];
 ```
 
-2. Auth (user) schema — `src/schemas/user.schema.ts`
+**Register di routes utama** (`src/routes/index.routes.ts`):
 
-```ts
-import { z } from "zod";
-
-export const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
-
-export const registerSchema = z.object({
-  name: z.string().min(1, "Nama wajib diisi"),
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
-
-export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
-```
-
-Cara pakai: gunakan `zod.middleware` atau middleware kustom untuk mem-parse dan memvalidasi request body sebelum controller dipanggil. Pada project ini tersedia `src/middleware/zod.middleware.ts` sebagai contoh integrasi.
-
-## Middleware autentikasi — contoh
-
-Contoh middleware ringkas yang membaca token dari cookie atau header (sesuai env TOKEN_SET_IN) dan memverifikasinya menggunakan util JWT (contoh: `src/utils/jwt.ts`).
-
-```ts
-import { Request, Response, NextFunction } from "express";
-import { JwtUtil } from "@/utils/jwt";
-import config from "@/config";
-
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const token =
-      config.TOKEN_SET_IN === "cookie"
-        ? req.cookies?.access_token
-        : req.headers.authorization?.replace(/^Bearer\s+/i, "");
-
-    if (!token)
-      return res.status(401).json({ status: "error", message: "Unauthorized" });
-
-    const payload = JwtUtil.verify(token);
-    // Pasang data user ke req (opsional)
-    (req as any).user = payload;
-    next();
-  } catch (err) {
-    return res
-      .status(401)
-      .json({ status: "error", message: "Token tidak valid" });
-  }
-};
-```
-
-Pemasangan di route:
-
-```ts
-import { Router } from "express";
-import { authMiddleware } from "@/middleware/auth.middleware";
+```typescript
 import productRouter from "./product.route";
-
-const apiRouter = Router();
-
-apiRouter.use("/products", authMiddleware, productRouter);
+apiRouter.use("/products", productRouter);
 ```
 
-Catatan: login endpoint biasanya tidak diproteksi; setelah login, token dikembalikan dan dapat disimpan di cookie atau lokal storage sesuai kebijakan keamanan.
+**Update Prisma Schema** (`prisma/schema.prisma`):
 
-## Response helper
+```prisma
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  price       Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
 
-Gunakan util `ResponseUtil.success(res, data, status?, message?)` untuk konsistensi response.
-
-## Testing
-
-Jalankan test unit/integrasi:
+Lalu jalankan:
 
 ```bash
-npm test
-npm run test:coverage
+npm run db:migrate
+npm run db:generate
 ```
 
-## Struktur proyek (singkat)
+---
 
+## � Response Format
+
+Template ini menggunakan **standardized response format** dengan `ResponseUtil`:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": { ... },
+  "messageCode": "SUCCESS",
+  "timestamp": "2025-10-12T10:30:00.000Z",
+  "path": "/api/v1/users"
+}
 ```
-src/
-├─ config/
-├─ controller/
-├─ middleware/
-├─ routes/
-├─ service/
-├─ repositories/
-├─ schemas/
-└─ utils/
-prisma/
-├─ schema.prisma
-└─ db/seed.ts
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "message": "Not found",
+  "messageCode": "NOT_FOUND",
+  "errors": [ ... ],
+  "timestamp": "2025-10-12T10:30:00.000Z",
+  "path": "/api/v1/users/123"
+}
 ```
 
-## Checklist pra-produksi
+### Paginated Response
 
-Praktik minimal sebelum deploy ke production:
+```json
+{
+  "success": true,
+  "message": "Success",
+  "data": [ ... ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false,
+    "nextPage": 2,
+    "prevPage": null
+  },
+  "timestamp": "2025-10-12T10:30:00.000Z",
+  "path": "/api/v1/users"
+}
+```
 
-- [ ] Gunakan JWT_SECRET yang kuat dan simpan di secret manager
-- [ ] Pastikan DATABASE_URL mengarah ke database production (hindari SQLite file)
-- [ ] Batasi ALLOWED_ORIGINS untuk CORS
-- [ ] Konfigurasi HTTPS/TLS di reverse-proxy (NGINX, Cloud, dsb.)
-- [ ] Nonaktifkan logging debug dan kurangi log level
-- [ ] Audit dependensi (npm audit / Snyk / Dependabot)
-- [ ] Backup & migration strategy untuk database
-- [ ] Rate-limit yang sesuai untuk endpoint sensitif
-- [ ] Pastikan environment variables sensitif tidak ter-commit
+### Response Methods
 
-## Deployment singkat
+```typescript
+import { ResponseUtil } from "@/utils/response";
+import { HttpStatus } from "@/constants/http-status";
+import { MessageCodes } from "@/constants/message";
 
-- Vercel: konfigurasi build dan environment variables di dashboard
-- Docker: gunakan docker-compose untuk menggabungkan layanan seperti Redis, Postgres
+// Success
+ResponseUtil.success(res, data, HttpStatus.OK, MessageCodes.SUCCESS);
+ResponseUtil.success(res, data, HttpStatus.OK, "Custom message");
 
-## Kredensial seed (default)
+// Created
+ResponseUtil.created(res, data, MessageCodes.CREATED);
 
-- Email: admin@example.com
-- Password: admin123
+// Error
+ResponseUtil.error(res, MessageCodes.INTERNAL_ERROR);
+ResponseUtil.error(
+  res,
+  "Custom error message",
+  undefined,
+  HttpStatus.BAD_REQUEST
+);
 
-> Catatan keamanan: ubah kredensial seed dan kunci sebelum production.
+// Not Found
+ResponseUtil.notFound(res, MessageCodes.NOT_FOUND);
 
-## Kontribusi
+// Unauthorized / Forbidden
+ResponseUtil.unauthorized(res);
+ResponseUtil.forbidden(res);
 
-Silakan fork, buat branch fitur, dan buka PR. Sertakan deskripsi perubahan dan testing singkat.
+// Validation Error
+ResponseUtil.validationError(res, errors);
 
-## Lisensi
+// Paginated
+ResponseUtil.paginated(res, data, page, limit, total);
+```
 
-MIT — Pito Desri Pauzi
+### Message Codes
+
+Available message codes di `src/constants/message.ts`:
+
+```typescript
+MessageCodes.SUCCESS; // "Success"
+MessageCodes.CREATED; // "Created successfully"
+MessageCodes.UPDATED; // "Updated successfully"
+MessageCodes.DELETED; // "Deleted successfully"
+MessageCodes.NOT_FOUND; // "Not found"
+MessageCodes.UNAUTHORIZED; // "Unauthorized"
+MessageCodes.FORBIDDEN; // "Forbidden"
+MessageCodes.BAD_REQUEST; // "Bad request"
+MessageCodes.CONFLICT; // "Conflict occurred"
+MessageCodes.VALIDATION_FAILED; // "Validation failed"
+MessageCodes.INVALID_CREDENTIALS; // "Email or password is incorrect"
+MessageCodes.INTERNAL_ERROR; // "Internal server error"
+```
+
+---
+
+## 🌟 Keunggulan Template
+
+### 🏗️ Clean Architecture
+
+- **Separation of Concerns**: Repository → Service → Controller
+- **Maintainable**: Easy to understand dan modify
+- **Scalable**: Siap untuk project besar
+- **Testable**: Mudah untuk unit testing
+
+### 🔒 Security & Performance
+
+- **JWT Authentication** dengan dual mode (header/cookie)
+- **Helmet.js** untuk security headers
+- **Rate Limiting** protection
+- **Bcrypt** password hashing
+- **Zod Validation** untuk input validation
+- **Caching System** dengan pattern matching
+- **Response Compression** untuk faster transfer
+
+### 💻 Developer Experience
+
+- **TypeScript** dengan strict mode
+- **Hot Reload** development
+- **Module Aliases** (`@/`) untuk clean imports
+- **ESLint + Prettier** configured
+- **Winston Logger** dengan daily rotate
+- **Prisma Studio** untuk database GUI
+- **Centralized Error Handling**
+
+### 📦 Production Ready
+
+- **Docker Support** dengan Dockerfile
+- **Environment Config** via `.env`
+- **Database Migrations** dengan Prisma
+- **Health Check Endpoint**
+- **Standardized API Responses**
+- **File Upload** support dengan Multer
+- **Testing Setup** dengan Jest
+
+### 🚀 Built-in Utilities
+
+- JWT & Bcrypt utilities
+- Cache manager dengan pattern deletion
+- Code generator helpers
+- Date utilities (date-fns)
+- Database transaction helpers
+- File upload handlers
+- Comprehensive logger
+
+---
+
+## 📄 Lisensi
+
+MIT License - lihat file [LICENSE](LICENSE)
+
+## 👨‍💻 Author
+
+**Pito Desri Pauzi**
+
+- GitHub: [@PitokDf](https://github.com/PitokDf)
+
+---
+
+**Happy Coding! 🚀**

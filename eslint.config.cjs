@@ -1,13 +1,13 @@
-const { typescriptEslint } = require('@typescript-eslint/eslint-plugin');
+const tsParser = require('@typescript-eslint/parser');
 
 module.exports = [
     {
-        ignores: ['node_modules/**', 'dist/**', 'uploads/**', 'logs/**', '*.log'],
+        ignores: ['node_modules/**', 'dist/**', 'uploads/**', 'logs/**', '*.log', 'tests/**'],
     },
     {
         files: ['**/*.ts', '**/*.js'],
         languageOptions: {
-            parser: require('@typescript-eslint/parser'),
+            parser: tsParser,
             parserOptions: {
                 project: './tsconfig.json',
                 sourceType: 'module',
@@ -24,37 +24,15 @@ module.exports = [
 
             // Remove unused imports automatically flagged
             'unused-imports/no-unused-imports': 'warn',
-            'unused-imports/no-unused-vars': ['warn', { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' }],
+            'unused-imports/no-unused-vars': ['warn', {
+                vars: 'all',
+                varsIgnorePattern: '^_',
+                args: 'after-used',
+                argsIgnorePattern: '^_'
+            }],
 
-            // Keep no-explicit-any as error (adjustable)
-            '@typescript-eslint/no-explicit-any': 'error',
-        },
-    },
-];
-const tsParser = require('@typescript-eslint/parser');
-
-module.exports = [
-    {
-        ignores: ['node_modules/**', 'dist/**', 'uploads/**', 'logs/**', '*.log'],
-    },
-    {
-        files: ['**/*.ts', '**/*.js'],
-        languageOptions: {
-            parser: tsParser,
-            parserOptions: {
-                project: './tsconfig.json',
-                sourceType: 'module',
-            },
-        },
-        plugins: {
-            '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
-            'unused-imports': require('eslint-plugin-unused-imports'),
-        },
-        rules: {
-            'no-unused-vars': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
-            'unused-imports/no-unused-imports': 'warn',
-            'unused-imports/no-unused-vars': ['warn', { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }]
+            // Allow explicit any type
+            '@typescript-eslint/no-explicit-any': 'off',
         },
     },
 ];

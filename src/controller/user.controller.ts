@@ -7,12 +7,18 @@ import { asyncHandler } from "@/middleware/error.middleware";
 import { HttpStatus } from "@/constants/http-status";
 import { MessageCodes } from "@/constants/message";
 import { Auth } from "@/utils/auth";
+import logger from "@/utils/winston.logger";
 
 export const getAllUserController = asyncHandler(async (req: Request, res: Response) => {
-    const users = await getAllUserService()
-    const authUser = req.auth_user
-    console.log(authUser);
-    return ResponseUtil.success(res, users, HttpStatus.OK, MessageCodes.SUCCESS)
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+
+    const result = await getAllUserService({ page, limit });
+    const authUser = req.auth_user;
+
+    logger.debug('Get all users request', { user: authUser, page, limit });
+
+    return ResponseUtil.success(res, result, HttpStatus.OK, MessageCodes.SUCCESS);
 })
 
 export const getUserByIdController = asyncHandler(async (req: Request, res: Response) => {
@@ -50,4 +56,10 @@ export const loginController = asyncHandler(async (req: Request, res: Response) 
     Auth.setTokenCookieHttpOnly(res, result.token, { duration: 3, unit: "d" })
 
     return ResponseUtil.success(res, result.user, HttpStatus.OK, "Login berhasil");
+});
+
+export const logoutController = asyncHandler(async (req: Request, res: Response) => {
+    Auth.clearTokenCookieHttpOnly(res)
+
+    return ResponseUtil.success(res, null, HttpStatus.OK, "Logout berhasil");
 });

@@ -5,6 +5,7 @@ import {
     deleteUserController,
     getAllUserController,
     getUserByIdController,
+    logoutController,
     updateUserController
 } from "@/controller/user.controller";
 import { loginController } from "@/controller/user.controller";
@@ -19,7 +20,20 @@ import authMiddleware from "@/middleware/auth.middleware";
 
 const userRouter = Router()
 
+// Public routes - tidak perlu authentication
+userRouter.post(
+    "/register",
+    validateSchema(createUserSchema),
+    checkEmailExists,
+    createUserController);
+
+userRouter.post('/login', validateSchema(loginSchema), loginController);
+
+// Protected routes - perlu authentication
 userRouter.use(authMiddleware)
+
+userRouter.post('/logout', logoutController);
+
 userRouter.get("/", getAllUserController);
 
 userRouter.get(
@@ -36,12 +50,5 @@ userRouter.patch(
     checkEmailExists,
     updateUserController);
 
-userRouter.post(
-    "/",
-    validateSchema(createUserSchema),
-    checkEmailExists,
-    createUserController);
-
-userRouter.post('/login', validateSchema(loginSchema), loginController);
 
 export default userRouter

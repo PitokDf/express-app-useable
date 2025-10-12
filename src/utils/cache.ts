@@ -146,6 +146,32 @@ class CacheManager {
 
         return `${prefix}:${JSON.stringify(sortedParams)}`;
     }
+
+    /**
+     * Get all cache keys
+     */
+    keys(): string[] {
+        return this.cache.keys();
+    }
+
+    /**
+     * Delete multiple keys that match a pattern
+     */
+    delPattern(pattern: string): number {
+        const keys = this.keys();
+        const keysToDelete = keys.filter(key => key.startsWith(pattern));
+        let deletedCount = 0;
+
+        keysToDelete.forEach(key => {
+            deletedCount += this.del(key);
+        });
+
+        if (deletedCount > 0) {
+            logger.debug(`Deleted ${deletedCount} cache keys matching pattern: ${pattern}`);
+        }
+
+        return deletedCount;
+    }
 }
 
 // Export singleton instance

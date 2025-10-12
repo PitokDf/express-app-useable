@@ -43,14 +43,23 @@ export class UserRepository {
     }
 
     // Optimized version - select only needed fields
-    static async findAllOptimized(): Promise<Pick<User, 'id' | 'name' | 'email'>[]> {
+    static async findAllOptimized(options?: {
+        skip?: number;
+        take?: number
+    }): Promise<Pick<User, 'id' | 'name' | 'email'>[]> {
         return db.user.findMany({
             select: {
                 id: true,
                 name: true,
                 email: true,
                 // Exclude password field for better performance
-            }
+            },
+            skip: options?.skip,
+            take: options?.take,
         });
+    }
+
+    static async count(): Promise<number> {
+        return db.user.count();
     }
 }
