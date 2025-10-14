@@ -396,63 +396,425 @@ export const createProductController = asyncHandler(
 
 ---
 
-### 4. Membuat Routes & Schema
+### 4. Membuat Routes & Validation Schema
 
-**Routes** menghubungkan URL dengan controllers:
+Template ini menggunakan **Zod** untuk validation schema yang kuat dan type-safe. Bagian ini menjelaskan cara membuat dan menggunakan validation schema.
+
+#### 4.1. Membuat Validation Schema
+
+Buat file schema di folder `src/schemas/`. Contoh `product.schema.ts`:
+
+```typescript
+// src/schemas/product.schema.ts
+import { z } from "zod";
+
+// Schema untuk create product
+export const createProductSchema = z.object({
+  name: z
+    .string()
+    .min(3, { message: "Nama minimal 3 karakter" })
+    .max(100, { message: "Nama maksimal 100 karakter" }),
+  price: z
+    .number({ required_error: "Price wajib diisi" })
+    .positive({ message: "Price harus lebih dari 0" }),
+  description: z
+    .string()
+    .max(500, { message: "Deskripsi maksimal 500 karakter" })
+    .optional(), // Field opsional
+  stock: z
+    .number()
+    .int({ message: "Stock harus bilangan bulat" })
+    .min(0, { message: "Stock tidak boleh negatif" })
+    .default(0), // Default value
+});
+
+// Export type untuk digunakan di service/controller
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+
+// Schema untuk update product (semua field optional)
+export const updateProductSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, { message: "Nama minimal 3 karakter" })
+      .optional(),
+    price: z.number().positive().optional(),
+    description: z.string().max(500).optional(),
+    stock: z.number().int().min(0).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Minimal satu field harus diisi untuk update",
+  });
+
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+```
+
+#### 4.2. Jenis-Jenis Validasi Zod
+
+**String Validations:**
+
+```typescript
+z.string() // String biasa
+  .min(3, { message: "Minimal 3 karakter" })
+  .max(100, { message: "Maksimal 100 karakter" })
+  .nonempty({ message: "Tidak boleh kosong" })
+  .email({ message: "Format email tidak valid" })
+  .url({ message: "Format URL tidak valid" })
+  .regex(/^[A-Z]/, { message: "Harus diawali huruf kapital" })
+  .trim() // Hapus whitespace di awal/akhir
+  .toLowerCase() // Convert ke lowercase
+  .toUpperCase() // Convert ke uppercase
+  .transform((str) => str.toLowerCase()) // Custom transform
+  .optional() // Field opsional
+  .nullable() // Bisa null
+  .default("default value"); // Default value
+```
+
+**Number Validations:**
+
+```typescript
+z.number() // Number biasa
+  .int({ message: "Harus bilangan bulat" })
+  .positive({ message: "Harus positif" })
+  .negative({ message: "Harus negatif" })
+  .min(0, { message: "Minimal 0" })
+  .max(100, { message: "Maksimal 100" })
+  .multipleOf(5, { message: "Harus kelipatan 5" })
+  .finite() // Tidak boleh Infinity
+  .safe() // Harus dalam range Number.MIN_SAFE_INTEGER dan MAX_SAFE_INTEGER
+  .optional()
+  .default(0);
+```
+
+**Boolean, Date, dan Enum:**
+
+```typescript
+// Boolean
+z.boolean({ required_error: "Status wajib diisi" });
+
+// Date
+z.date({ required_error: "Tanggal wajib diisi" })
+  .min(new Date("2024-01-01"), { message: "Minimal 1 Jan 2024" })
+  .max(new Date(), { message: "Tidak boleh melebihi hari ini" });
+
+// Enum
+z.enum(["PENDING", "PROCESSING", "COMPLETED"], {
+  errorMap: () => ({ message: "Status tidak valid" }),
+});
+
+// Native Enum
+enum Role {
+  ADMIN = "ADMIN",
+  USER = "USER",
+}
+z.nativeEnum(Role);
+```
+
+**Array dan Object:**
+
+```typescript
+// Array
+z.array(z.string()) // Array of strings
+  .min(1, { message: "Minimal 1 item" })
+  .max(10, { message: "Maksimal 10 item" })
+  .nonempty({ message: "Array tidak boleh kosong" });
+
+// Object
+z.object({
+  name: z.string(),
+  age: z.number(),
+});
+
+// Nested object
+z.object({
+  user: z.object({
+    name: z.string(),
+    email: z.string().email(),
+  }),
+  tags: z.array(z.string()),
+});
+```
+
+**Custom Validation dengan `.refine()`:**
+
+```typescript
+// Validasi custom password
+export const registerSchema = z
+  .object({
+    password: z.string().min(6),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password tidak cocok",
+    path: ["confirmPassword"], // Error akan muncul di field confirmPassword
+  });
+
+// Validasi age range
+export const userSchema = z.object({
+  age: z.number().refine((age) => age >= 18 && age <= 100, {
+    message: "Umur harus antara 18-100 tahun",
+  }),
+});
+
+// Multiple refine
+export const productSchema = z
+  .object({
+    price: z.number(),
+    discount: z.number(),
+  })
+  .refine((data) => data.discount < data.price, {
+    message: "Discount tidak boleh lebih besar dari price",
+    path: ["discount"],
+  })
+  .refine((data) => data.discount >= 0, {
+    message: "Discount tidak boleh negatif",
+    path: ["discount"],
+  });
+```
+
+**Transform Data:**
+
+```typescript
+// Transform email ke lowercase
+z.string().email().transform((email) => email.toLowerCase());
+
+// Transform string number ke number
+z.string().transform((val) => parseInt(val, 10));
+
+// Transform date string ke Date object
+z.string().transform((str) => new Date(str));
+
+// Conditional transform
+z.string()
+  .optional()
+  .transform((str) => (str ? str.trim() : str));
+```
+
+#### 4.3. Menggunakan Schema di Routes
+
+**Routes** menghubungkan URL dengan controllers dan menggunakan `validateSchema` middleware:
 
 ```typescript
 // src/routes/product.route.ts
 import { Router } from "express";
 import {
   getAllProductController,
+  getProductByIdController,
   createProductController,
+  updateProductController,
+  deleteProductController,
 } from "@/controller/product.controller";
 import { validateSchema } from "@/middleware/zod.middleware";
-import { createProductSchema } from "@/schemas/product.schema";
+import {
+  createProductSchema,
+  updateProductSchema,
+} from "@/schemas/product.schema";
 import authMiddleware from "@/middleware/auth.middleware";
 
 const productRouter = Router();
 
-// Public routes
+// Public routes - tidak perlu authentication
 productRouter.get("/", getAllProductController);
 productRouter.get("/:productId", getProductByIdController);
 
-// Protected routes (perlu auth)
+// Protected routes - perlu authentication
 productRouter.use(authMiddleware);
+
+// POST /products - dengan validation schema
 productRouter.post(
   "/",
-  validateSchema(createProductSchema),
+  validateSchema(createProductSchema), // Validate req.body
   createProductController
 );
+
+// PATCH /products/:productId - dengan validation schema
+productRouter.patch(
+  "/:productId",
+  validateSchema(updateProductSchema), // Validate req.body
+  updateProductController
+);
+
+// DELETE /products/:productId
+productRouter.delete("/:productId", deleteProductController);
 
 export default productRouter;
 ```
 
-**Validation Schema** dengan Zod:
+**Cara Kerja `validateSchema` Middleware:**
 
 ```typescript
-// src/schemas/product.schema.ts
+// src/middleware/zod.middleware.ts (sudah tersedia)
+import { NextFunction, Request, Response } from "express";
+import { ZodError, ZodSchema } from "zod";
+
+export const validateSchema = (schema: ZodSchema) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Parse dan validate req.body dengan schema
+      schema.parse(req.body);
+      next(); // Lanjutkan jika validasi berhasil
+    } catch (error: any) {
+      if (error instanceof ZodError) {
+        // Error akan di-handle oleh error middleware
+        return next(error);
+      }
+      next(new AppError("Kesalahan tak terduga saat validasi input."));
+    }
+  };
+};
+```
+
+**Error Response dari Validation:**
+
+Ketika validasi gagal, user akan menerima response seperti ini:
+
+```json
+{
+  "success": false,
+  "message": "Invalid input data.",
+  "errors": [
+    {
+      "path": "name",
+      "message": "Nama minimal 3 karakter"
+    },
+    {
+      "path": "price",
+      "message": "Price harus lebih dari 0"
+    }
+  ],
+  "timestamp": "2025-10-12T10:30:00.000Z",
+  "path": "/api/v1/products"
+}
+```
+
+#### 4.4. Contoh Lengkap Schema untuk Use Case Umum
+
+**User Registration Schema:**
+
+```typescript
+// src/schemas/user.schema.ts
 import { z } from "zod";
 
-export const createProductSchema = z.object({
-  body: z.object({
-    name: z.string().min(3).max(100),
-    price: z.number().positive(),
-    description: z.string().max(500).optional(),
-  }),
+export const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, { message: "Nama minimal 3 karakter" })
+      .max(100, { message: "Nama maksimal 100 karakter" }),
+    email: z
+      .string()
+      .email({ message: "Format email tidak valid" })
+      .transform((email) => email.toLowerCase()),
+    password: z
+      .string()
+      .min(6, { message: "Password minimal 6 karakter" })
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+        message: "Password harus mengandung huruf besar, kecil, dan angka",
+      }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password tidak cocok",
+    path: ["confirmPassword"],
+  });
+
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .email({ message: "Format email tidak valid" })
+    .transform((email) => email.toLowerCase()),
+  password: z.string().nonempty({ message: "Password wajib diisi" }),
 });
 
-export type CreateProductInput = z.infer<typeof createProductSchema>["body"];
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
 ```
+
+**Query Parameters Validation:**
+
+```typescript
+// src/schemas/query.schema.ts
+import { z } from "zod";
+
+// Schema untuk pagination query
+export const paginationSchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .refine((val) => val > 0, { message: "Page harus lebih dari 0" }),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .refine((val) => val > 0 && val <= 100, {
+      message: "Limit harus antara 1-100",
+    }),
+  search: z.string().optional(),
+  sortBy: z.enum(["name", "createdAt", "price"]).optional(),
+  order: z.enum(["asc", "desc"]).optional().default("desc"),
+});
+
+export type PaginationQuery = z.infer<typeof paginationSchema>;
+
+// Gunakan di controller:
+// const query = paginationSchema.parse(req.query);
+```
+
+**File Upload Validation:**
+
+```typescript
+// src/schemas/upload.schema.ts
+import { z } from "zod";
+
+export const uploadImageSchema = z.object({
+  title: z.string().min(3).max(100),
+  description: z.string().max(500).optional(),
+  category: z.enum(["profile", "product", "banner"]),
+  // File akan di-handle oleh Multer, validasi file di middleware
+});
+```
+
+#### 4.5. Best Practices
+
+✅ **DO:**
+
+- Buat schema terpisah untuk setiap use case (create, update, dll)
+- Gunakan custom error messages yang jelas dan informatif
+- Gunakan `.transform()` untuk normalize data (lowercase email, trim string)
+- Gunakan `.refine()` untuk validasi kompleks
+- Export types dengan `z.infer<>` untuk type safety
+- Gunakan `.optional()` untuk field yang tidak wajib
+- Berikan default value dengan `.default()` jika diperlukan
+
+❌ **DON'T:**
+
+- Jangan validasi di controller (gunakan schema)
+- Jangan hardcode error messages yang sama berulang kali
+- Jangan lupa handle edge cases (null, undefined, empty string)
+- Jangan skip validation untuk "internal" endpoints
+- Jangan gunakan `.any()` - selalu spesifik dengan type
+
+#### 4.6. Register Routes
 
 **Register di routes utama** (`src/routes/index.routes.ts`):
 
 ```typescript
+import { Router } from "express";
+import userRouter from "./user.route";
 import productRouter from "./product.route";
+
+const apiRouter = Router();
+
+apiRouter.use("/users", userRouter);
 apiRouter.use("/products", productRouter);
+
+export default apiRouter;
 ```
 
-**Update Prisma Schema** (`prisma/schema.prisma`):
+#### 4.7. Update Prisma Schema
+
+Jangan lupa update database schema di `prisma/schema.prisma`:
 
 ```prisma
 model Product {
@@ -460,6 +822,7 @@ model Product {
   name        String
   price       Float
   description String?
+  stock       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -468,8 +831,8 @@ model Product {
 Lalu jalankan:
 
 ```bash
-npm run db:migrate
-npm run db:generate
+npm run db:migrate   # Create migration
+npm run db:generate  # Generate Prisma Client
 ```
 
 ---
