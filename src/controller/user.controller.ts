@@ -1,7 +1,6 @@
 
 import { Request, Response } from "express";
-import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService } from "@/service/user.service";
-import { loginService } from "@/service/user.service";
+import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService, loginService } from "@/service/user.service";
 import { ResponseUtil } from "@/utils/response";
 import { asyncHandler } from "@/middleware/error.middleware";
 import { HttpStatus } from "@/constants/http-status";
@@ -9,57 +8,59 @@ import { MessageCodes } from "@/constants/message";
 import { Auth } from "@/utils/auth";
 import logger from "@/utils/winston.logger";
 
-export const getAllUserController = asyncHandler(async (req: Request, res: Response) => {
-    const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+export class UserController {
+    public static getAllUser = asyncHandler(async (req: Request, res: Response) => {
+        const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
 
-    const result = await getAllUserService({ page, limit });
-    const authUser = req.auth_user;
+        const result = await getAllUserService({ page, limit });
+        const authUser = req.auth_user;
 
-    logger.debug('Get all users request', { user: authUser, page, limit });
+        logger.debug('Get all users request', { user: authUser, page, limit });
 
-    return ResponseUtil.success(res, result, HttpStatus.OK, MessageCodes.SUCCESS);
-})
+        return ResponseUtil.success(res, result, HttpStatus.OK, MessageCodes.SUCCESS);
+    })
 
-export const getUserByIdController = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.params.userId
-    const user = await getUserByIdService(userId)
+    public static getUserById = asyncHandler(async (req: Request, res: Response) => {
+        const userId = req.params.userId
+        const user = await getUserByIdService(userId)
 
-    return ResponseUtil.success(res, user)
-})
+        return ResponseUtil.success(res, user)
+    })
 
-export const createUserController = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.body
-    const user = await createUserService(payload)
+    public static createUser = asyncHandler(async (req: Request, res: Response) => {
+        const payload = req.body
+        const user = await createUserService(payload)
 
-    return ResponseUtil.success(res, user, HttpStatus.CREATED, MessageCodes.CREATED)
-})
+        return ResponseUtil.success(res, user, HttpStatus.CREATED, MessageCodes.CREATED)
+    })
 
-export const updateUserController = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.body
-    const userId = req.params.userId
-    const user = await updateUserService(userId, payload)
+    public static updateUser = asyncHandler(async (req: Request, res: Response) => {
+        const payload = req.body
+        const userId = req.params.userId
+        const user = await updateUserService(userId, payload)
 
-    return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.UPDATED)
-})
+        return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.UPDATED)
+    })
 
-export const deleteUserController = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.params.userId
-    const user = await deleteUserService(userId)
+    public static deleteUser = asyncHandler(async (req: Request, res: Response) => {
+        const userId = req.params.userId
+        const user = await deleteUserService(userId)
 
-    return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.DELETED)
-})
+        return ResponseUtil.success(res, user, HttpStatus.OK, MessageCodes.DELETED)
+    })
 
-export const loginController = asyncHandler(async (req: Request, res: Response) => {
-    const payload = req.body;
-    const result = await loginService(payload.email, payload.password);
-    Auth.setTokenCookieHttpOnly(res, result.token, { duration: 3, unit: "d" })
+    public static login = asyncHandler(async (req: Request, res: Response) => {
+        const payload = req.body;
+        const result = await loginService(payload.email, payload.password);
+        Auth.setTokenCookieHttpOnly(res, result.token, { duration: 3, unit: "d" })
 
-    return ResponseUtil.success(res, result.user, HttpStatus.OK, "Login berhasil");
-});
+        return ResponseUtil.success(res, result.user, HttpStatus.OK, "Login berhasil");
+    });
 
-export const logoutController = asyncHandler(async (req: Request, res: Response) => {
-    Auth.clearTokenCookieHttpOnly(res)
+    public static logout = asyncHandler(async (req: Request, res: Response) => {
+        Auth.clearTokenCookieHttpOnly(res)
 
-    return ResponseUtil.success(res, null, HttpStatus.OK, "Logout berhasil");
-});
+        return ResponseUtil.success(res, null, HttpStatus.OK, "Logout berhasil");
+    });
+}

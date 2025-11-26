@@ -6,7 +6,7 @@
     "@": "src"
   },
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only -r module-alias/register -r dotenv/config --watch .env src/index.ts",
+    "dev": "tsx watch -r module-alias/register -r dotenv/config src/index.ts",
     "lint": "NODE_NO_WARNINGS=1 eslint --config eslint.config.cjs 'src/**/*.{ts,js}' --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "NODE_NO_WARNINGS=1 eslint --config eslint.config.cjs 'src/**/*.{ts,js}' --fix",
     "build": "tsc && tsc-alias",
@@ -22,7 +22,7 @@
     "db:prepare": "npx prisma generate"
   },
   "prisma": {
-    "seed": "ts-node -r module-alias/register prisma/db/seed.ts"
+    "seed": "tsx -r module-alias/register -r dotenv/config prisma/db/seed.ts"
   },
   "keywords": [
     "service",

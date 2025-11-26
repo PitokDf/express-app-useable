@@ -1,35 +1,24 @@
-# --- Multi-stage build for smaller production image ---
-# Stage 1: Build and compile
-FROM node:20-alpine AS builder
+FROM node:20-alpine as builder
+WORKDIR /app/express-api
 
-WORKDIR /app/backend
+COPY package.json ./
+COPY prisma ./prisma
 
-COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
-# Prisma akan menghasilkan binary engine untuk target yang ditentukan di schema.prisma
-RUN npx prisma generate
-
+RUN npm db:generate
 RUN npm run build
 
-# Stage 2: Production runtime
-FROM node:20-alpine AS runner
+FROM node:20-alpine as runner
+WORKDIR /app/express-api
 
-WORKDIR /app/backend
-
-COPY --from=builder /app/backend/package*.json ./
-COPY --from=builder /app/backend/node_modules ./node_modules
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/prisma ./prisma
-
-# Pastikan dependensi OpenSSL terinstal di Alpine
-# Ini untuk library yang dibutuhkan runtime Prisma Engine
 RUN apk add --no-cache openssl libstdc++ ca-certificates
 
-# Hanya install Prisma CLI sebagai runtime dependency (tidak perlu generate lagi di sini)
-RUN npm install prisma --omit=dev --no-fund --no-audit --ignore-scripts
+COPY --from=base /app/express-api/node_modules ./node_modules
+COPY --from=builder /app/express-api/dist ./dist
+COPY --from=builder /app/express-api/prisma ./prisma
 
 EXPOSE 6789
-CMD ["npm", "start"]
+CMD [ "node", "dist/src/index.js" ]

@@ -1,14 +1,5 @@
 
 import { Router } from "express";
-import {
-    createUserController,
-    deleteUserController,
-    getAllUserController,
-    getUserByIdController,
-    logoutController,
-    updateUserController
-} from "@/controller/user.controller";
-import { loginController } from "@/controller/user.controller";
 import { validateSchema } from "@/middleware/zod.middleware";
 import {
     createUserSchema,
@@ -17,6 +8,7 @@ import {
 import { loginSchema } from "@/schemas/user.schema";
 import { checkEmailExists } from "@/validators/user.validator";
 import authMiddleware from "@/middleware/auth.middleware";
+import { UserController } from "@/controller/user.controller";
 
 const userRouter = Router()
 
@@ -25,30 +17,29 @@ userRouter.post(
     "/register",
     validateSchema(createUserSchema),
     checkEmailExists,
-    createUserController);
+    UserController.createUser);
 
-userRouter.post('/login', validateSchema(loginSchema), loginController);
+userRouter.post('/login', validateSchema(loginSchema), UserController.login);
 
 // Protected routes - perlu authentication
 userRouter.use(authMiddleware)
 
-userRouter.post('/logout', logoutController);
+userRouter.post('/logout', UserController.logout);
 
-userRouter.get("/", getAllUserController);
+userRouter.get("/", UserController.getAllUser);
 
 userRouter.get(
     "/:userId",
-    getUserByIdController);
+    UserController.getUserById);
 
 userRouter.delete(
     "/:userId",
-    deleteUserController);
+    UserController.deleteUser);
 
 userRouter.patch(
     "/:userId",
     validateSchema(updateUserSchema),
     checkEmailExists,
-    updateUserController);
-
+    UserController.updateUser);
 
 export default userRouter
