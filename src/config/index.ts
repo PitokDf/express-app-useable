@@ -1,6 +1,6 @@
-import dotenv from "dotenv"
+// import dotenv from "dotenv"
 
-dotenv.config()
+// dotenv.config()
 
 export const config = {
     PORT: parseInt(process.env.PORT || "6789", 10),
