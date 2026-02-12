@@ -5,9 +5,9 @@ import { AppError } from "@/errors/app-error";
 import { Messages } from "@/constants/message";
 import { ZodError } from "zod";
 import { MulterError } from "multer";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { mapPrismaError, isPrismaError } from '@/errors/prisma-error';
 import { HttpStatus } from "@/constants/http-status";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
 export const notFound = (req: Request, res: Response): void => {
     ResponseUtil.notFound(res, `Route ${req.originalUrl} not found`);

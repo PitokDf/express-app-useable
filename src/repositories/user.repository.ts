@@ -1,15 +1,15 @@
+import prisma from "@/config/prisma";
 import { User } from "@prisma/client";
-import { db } from "@/config/prisma";
 
 export class UserRepository {
     static async findById(id: string): Promise<User | null> {
-        return db.user.findUnique({
+        return prisma.user.findUnique({
             where: { id }
         })
     }
 
     static async findByEmail(email: string, ignoreUserId?: string): Promise<User | null> {
-        return db.user.findFirst({
+        return prisma.user.findFirst({
             where: {
                 email,
                 ...(ignoreUserId ?
@@ -20,26 +20,26 @@ export class UserRepository {
     }
 
     static async create(data: Pick<User, 'name' | 'email' | 'password'>): Promise<User> {
-        return db.user.create({
+        return prisma.user.create({
             data,
         });
     }
 
     static async update(id: string, data: Partial<Pick<User, 'name' | 'password'>>): Promise<User> {
-        return db.user.update({
+        return prisma.user.update({
             where: { id },
             data,
         });
     }
 
     static async delete(id: string): Promise<User> {
-        return db.user.delete({
+        return prisma.user.delete({
             where: { id },
         });
     }
 
     static async findAll(): Promise<User[]> {
-        return db.user.findMany();
+        return prisma.user.findMany();
     }
 
     // Optimized version - select only needed fields
@@ -47,7 +47,7 @@ export class UserRepository {
         skip?: number;
         take?: number
     }): Promise<Pick<User, 'id' | 'name' | 'email'>[]> {
-        return db.user.findMany({
+        return prisma.user.findMany({
             select: {
                 id: true,
                 name: true,
@@ -60,6 +60,6 @@ export class UserRepository {
     }
 
     static async count(): Promise<number> {
-        return db.user.count();
+        return prisma.user.count();
     }
 }

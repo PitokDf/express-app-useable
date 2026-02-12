@@ -7,11 +7,11 @@ import compression from "compression"
 import { errorHandler, notFound } from "./middleware/error.middleware"
 import { App } from "./constants/app"
 import apiRouter from "./routes/index.routes"
-import { prisma } from "./config/prisma"
 import { requestLogger } from "./middleware/logging.middleware"
 import { ResponseUtil } from "./utils"
 import { HttpStatus } from "./constants/http-status"
 import { corsConfiguration } from "./config/cors"
+import prisma from "./config/prisma"
 
 const app = express()
 

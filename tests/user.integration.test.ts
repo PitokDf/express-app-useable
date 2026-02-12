@@ -1,15 +1,15 @@
 import request from "supertest";
-import { db } from "../src/config/prisma";
 import app from "../src/app";
+import prisma from "../src/config/prisma";
 
 describe("User Routes", () => {
   // Bersihkan tabel sebelum & sesudah test
   beforeEach(async () => {
-    await db.user.deleteMany();
+    await prisma.user.deleteMany();
   });
 
   afterAll(async () => {
-    await db.$disconnect();
+    await prisma.$disconnect();
   });
 
   const testUser = {
@@ -34,7 +34,7 @@ describe("User Routes", () => {
 
   it("should login with valid credentials", async () => {
     // Create user first
-    await db.user.create({
+    await prisma.user.create({
       data: {
         ...testUser,
         password: "$2a$10$XqKmYwHYHzGRYO7P0hqQZeJKvMxLkQkWqNqZ7FZyVkKp1vXx4KCVO" // hashed "secure123"
@@ -172,7 +172,7 @@ describe("User Routes", () => {
 
     expect(res.body.success).toBe(true);
 
-    const deleted = await db.user.findUnique({ where: { id: userId } });
+    const deleted = await prisma.user.findUnique({ where: { id: userId } });
     expect(deleted).toBeNull();
   });
 
