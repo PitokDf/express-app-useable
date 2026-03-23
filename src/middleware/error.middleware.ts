@@ -7,7 +7,7 @@ import { ZodError } from "zod";
 import { MulterError } from "multer";
 import { mapPrismaError, isPrismaError } from '@/errors/prisma-error';
 import { HttpStatus } from "@/constants/http-status";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { Prisma } from "@prisma/client";
 
 export const notFound = (req: Request, res: Response): void => {
     ResponseUtil.notFound(res, `Route ${req.originalUrl} not found`);
@@ -48,7 +48,7 @@ export const errorHandler = (
         message = "Invalid file type";
     }
 
-    else if (isPrismaError(err) || err instanceof PrismaClientKnownRequestError) {
+    else if (isPrismaError(err) || err instanceof Prisma.PrismaClientKnownRequestError) {
         const mapped = mapPrismaError(err);
         statusCode = mapped.httpStatus ?? HttpStatus.INTERNAL_SERVER_ERROR;
         // Use the mapped message but preserve a friendlier message for known cases
